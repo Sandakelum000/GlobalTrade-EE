@@ -1,0 +1,14 @@
+<persistence-unit
+        name="GlobalTradeLogisticsPU"
+        transaction-type="JTA">
+
+    <jta-data-source>jdbc/globalTradeLogistics</jta-data-source>
+
+    <properties>
+        <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
+        <property name="eclipselink.logging.level" value="INFO"/>
+        <property name="eclipselink.logging.parameters" value="true"/>
+
+    </properties>
+
+</persistence-unit>
