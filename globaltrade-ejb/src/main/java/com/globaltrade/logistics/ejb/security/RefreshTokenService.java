@@ -1,18 +1,20 @@
 package com.globaltrade.logistics.ejb.security;
 
+import com.globaltrade.logistics.core.entity.security.RefreshToken;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.ejb.repository.RefreshTokenRepository;
+import com.globaltrade.logistics.ejb.repository.UserRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.Base64;
+import java.util.Optional;
 
 @ApplicationScoped
 @Transactional
@@ -24,19 +26,67 @@ public class RefreshTokenService {
     @Inject
     private RefreshTokenRepository refreshTokenRepository;
 
-    public String create(User user) {
+    @Inject
+    private UserRepository userRepository;
 
+    public record RefreshResult(User user, String refreshToken) {}
+
+
+    @Transactional(Transactional.TxType.REQUIRED)
+    public String createByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("User not found: " + username)
+                );
+        refreshTokenRepository.deleteRefreshTokenByUserId(user.getId());
+        return create(user);
     }
 
-    @Transactional
-    public User validateAndRevoke(String rawToken){
+    @Transactional(Transactional.TxType.REQUIRED)
+    public RefreshResult rotateRfToken(String rawToken){
+        if (rawToken == null || rawToken.isBlank()) {
+            throw new IllegalArgumentException("Refresh token is required");
+        }
+        String tokenHash = hashToken(rawToken);
+        User user = refreshTokenRepository.findByTokenHash(tokenHash)
+                .filter(refreshToken -> !refreshToken.isExpired())
+                .map(RefreshToken::getUser)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired refresh token"));
+
+        refreshTokenRepository.deleteRefreshToken(tokenHash);
+        return new RefreshResult(user, tokenHash);
+    }
+
+    public String create(User user) {
+        String rawToken = generateToken();
+        RefreshToken refreshToken = RefreshToken.builder()
+                .tokenHash(hashToken(rawToken))
+                .user(user)
+                .expiresAt(Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_SECONDS))
+                .build();
+
+        refreshTokenRepository.saveRefreshToken(refreshToken);
+        return rawToken;
+    }
+
+    public User validate(String rawToken){
         if(rawToken == null || rawToken.isBlank()){
             return null;
         }
-        hashToken(rawToken);
+        String tokenHash = hashToken(rawToken);
+        return refreshTokenRepository.findByTokenHash(tokenHash)
+                .filter(refreshToken -> !refreshToken.isExpired())
+                .map(RefreshToken::getUser)
+                .orElse(null);
     }
 
-    @Transactional
+    public void deleteRefreshToken(String tokenHash){
+        refreshTokenRepository.deleteRefreshToken(tokenHash);
+    }
+
     public int cleanup(){
         return refreshTokenRepository.deleteExpiredToken();
     }

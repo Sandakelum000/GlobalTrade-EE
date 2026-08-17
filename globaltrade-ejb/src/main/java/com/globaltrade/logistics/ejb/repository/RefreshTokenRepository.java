@@ -8,6 +8,7 @@ import jakarta.persistence.PersistenceContext;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 @ApplicationScoped
 public class RefreshTokenRepository {
@@ -28,8 +29,14 @@ public class RefreshTokenRepository {
         }
     }
 
-    public int deleteRefreshToken(String tokenHash) {
-        return entityManager.createNamedQuery("RefreshToken.deleteToken")
+    public void deleteRefreshTokenByUserId(UUID userId) {
+        entityManager.createNamedQuery("RefreshToken.deleteByUserId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+    }
+
+    public void deleteRefreshToken(String tokenHash) {
+        entityManager.createNamedQuery("RefreshToken.deleteToken")
                 .setParameter("tokenHash", tokenHash)
                 .executeUpdate();
     }

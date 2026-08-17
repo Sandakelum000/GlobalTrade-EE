@@ -1,0 +1,91 @@
+package com.globaltrade.logistics.ejb.beans;
+
+import com.globaltrade.logistics.core.dto.customer.CustomerRegistrationRequest;
+import com.globaltrade.logistics.core.dto.customer.CustomerRegistrationResponse;
+import com.globaltrade.logistics.core.entity.company.Company;
+import com.globaltrade.logistics.core.entity.customer.Customer;
+import com.globaltrade.logistics.core.entity.security.Role;
+import com.globaltrade.logistics.core.entity.security.RoleType;
+import com.globaltrade.logistics.core.entity.security.User;
+import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
+import com.globaltrade.logistics.core.service.CustomerService;
+import com.globaltrade.logistics.ejb.repository.CompanyRepository;
+import com.globaltrade.logistics.ejb.repository.CustomerRepository;
+import com.globaltrade.logistics.ejb.repository.RoleRepository;
+import com.globaltrade.logistics.ejb.repository.UserRepository;
+import com.globaltrade.logistics.ejb.security.PasswordService;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import org.springframework.lang.NonNull;
+
+@Stateless
+public class CustomerRegisterBean implements CustomerService {
+
+    @Inject
+    private CustomerRepository customerRepository;
+
+    @Inject
+    private CompanyRepository companyRepository;
+
+    @Inject
+    private UserRepository userRepository;
+
+    @Inject
+    private PasswordService passwordService;
+
+    @Inject
+    private RoleRepository roleRepository;
+
+    @Override
+    @Transactional(Transactional.TxType.REQUIRED)
+    public CustomerRegistrationResponse registerCustomer(@NonNull CustomerRegistrationRequest request) {
+
+        Company company = companyRepository.findById(request.companyId())
+                .orElseThrow(() -> new IllegalArgumentException("Company not found"));
+
+        if (userRepository.findByUsername(request.username()).isPresent()) {
+            throw new UsernameAlreadyExistsException(request.username());
+        }
+
+        Role customerRole = roleRepository.findByName(RoleType.CUSTOMER)
+                .orElseThrow(() -> new IllegalArgumentException("Customer role not configured"));
+
+        User user = User.builder()
+                .username(request.username())
+                .email(request.email())
+                .passwordHash(passwordService.hashPassword(request.password()))
+                .build();
+        user.getRoles().add(customerRole);
+        userRepository.save(user);
+
+        //customer
+        Customer customer = Customer.builder()
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .customerType(request.customerType())
+                .email(request.email())
+                .mobile1(request.mobile1())
+                .mobile2(request.mobile2())
+                .company(company)
+                .user(user)
+                .kycVerified(false)
+                .build();
+
+        customerRepository.save(customer);
+
+        return new CustomerRegistrationResponse(
+                customer.getId(),
+                customer.getUser().getUsername(),
+                customer.getFirstName(),
+                customer.getLastName(),
+                customer.getEmail(),
+                customer.getMobile1(),
+                customer.getMobile2(),
+                customer.getCompany().getId(),
+                customer.getCustomerType(),
+                customer.getStatus(),
+                customer.isKycVerified()
+        );
+    }
+}

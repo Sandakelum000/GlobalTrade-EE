@@ -2,6 +2,7 @@ package com.globaltrade.logistics.core.entity.customer;
 
 import com.globaltrade.logistics.core.entity.common.Address;
 import com.globaltrade.logistics.core.entity.common.BaseEntity;
+import com.globaltrade.logistics.core.entity.company.Company;
 import com.globaltrade.logistics.core.entity.security.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -12,7 +13,7 @@ import lombok.*;
 @Entity
 @Table(name = "customers",
         indexes = {
-                @Index(name = "idx_customer_company", columnList = "company_name"),
+                @Index(name = "idx_customer_company_id", columnList = "company_id"),
                 @Index(name = "idx_customer_email", columnList = "email")
         })
 @Builder
@@ -50,10 +51,13 @@ public class Customer extends BaseEntity {
     )
     private User user;
 
-    @NotBlank
-    @Size(max = 150)
-    @Column(name = "company_name", nullable = false, length = 150)
-    private String companyName;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "company_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_customer_company")
+    )
+    private Company company;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "customer_type", nullable = false)
@@ -64,9 +68,6 @@ public class Customer extends BaseEntity {
     @Column(name = "status", nullable = false)
     @Builder.Default
     private CustomerStatus status = CustomerStatus.ACTIVE;
-
-    @Embedded
-    private Address address;
 
     @Column(name = "kyc_verified")
     @Builder.Default

@@ -1,10 +1,9 @@
 package com.globaltrade.logistics.core.entity.vendor;
 
-import com.globaltrade.logistics.core.entity.common.Address;
 import com.globaltrade.logistics.core.entity.common.BaseEntity;
+import com.globaltrade.logistics.core.entity.company.Company;
 import com.globaltrade.logistics.core.entity.security.User;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -15,8 +14,8 @@ import lombok.*;
         name = "vendors",
         indexes = {
                 @Index(
-                        name = "idx_vendor_company_name",
-                        columnList = "company_name"
+                        name = "idx_vendor_company_id",
+                        columnList = "company_id"
                 ),
                 @Index(
                         name = "idx_vendor_email",
@@ -31,14 +30,13 @@ import lombok.*;
 @AllArgsConstructor
 public class Vendor extends BaseEntity {
 
-    @NotBlank
-    @Size(max = 150)
-    @Column(
-            name = "company_name",
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "company_id",
             nullable = false,
-            length = 150
+            foreignKey = @ForeignKey(name = "fk_vendor_company")
     )
-    private String companyName;
+    private Company company;
 
     @NotBlank
     @Size(max = 45)
@@ -71,9 +69,6 @@ public class Vendor extends BaseEntity {
     )
     private User user;
 
-    @Valid
-    @Embedded
-    private Address address;
 
     @Column(
             name = "performance_score",

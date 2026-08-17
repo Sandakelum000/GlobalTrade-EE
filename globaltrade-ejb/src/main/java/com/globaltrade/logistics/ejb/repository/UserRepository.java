@@ -13,6 +13,10 @@ public class UserRepository {
     @PersistenceContext
     private EntityManager em;
 
+    public void save(User user) {
+        em.persist(user);
+    }
+
     public Optional<User> findByUsername(String username) {
        try{
            return Optional.of(em.createNamedQuery("User.findByUsername", User.class)

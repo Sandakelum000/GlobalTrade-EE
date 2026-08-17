@@ -1,27 +1,25 @@
 package com.globaltrade.logistics.web.resource;
 
-import com.globaltrade.logistics.core.entity.security.Role;
-import com.globaltrade.logistics.core.entity.security.RoleType;
+import com.globaltrade.logistics.core.dto.login.LoginRequest;
+import com.globaltrade.logistics.core.dto.login.RefreshRequest;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.ejb.security.JWTService;
-import com.globaltrade.logistics.ejb.security.PasswordService;
-import com.globaltrade.logistics.web.dto.LoginRequest;
+import com.globaltrade.logistics.ejb.security.RefreshTokenService;
+
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.security.enterprise.credential.UsernamePasswordCredential;
 import jakarta.security.enterprise.identitystore.CredentialValidationResult;
 import jakarta.security.enterprise.identitystore.IdentityStoreHandler;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
@@ -34,22 +32,74 @@ public class AuthResource {
     @Inject
     private JWTService jwtService;
 
+    @Inject
+    private RefreshTokenService refreshTokenService;
+
     @POST
     @Path("/login")
-    public Response login(@Valid LoginRequest request){
+    public Response login(@Valid @NotNull LoginRequest request) {
         CredentialValidationResult result = identityStoreHandler
                 .validate(new UsernamePasswordCredential(request.username(), request.password()));
 
-        if(result.getStatus() == CredentialValidationResult.Status.VALID) {
-            String token = jwtService.generateAccessToken(result.getCallerPrincipal().getName(), result.getCallerGroups());
-
-            //refresh token
-            return Response.ok(
-                    Map.of("access",token,
-                            "roles",result.getCallerGroups())).build();
+        if (result.getStatus() != CredentialValidationResult.Status.VALID) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(Map.of("error", "Invalid username or password"))
+                    .build();
         }
-        return Response.status(Response.Status.UNAUTHORIZED).build();
+        String username = result.getCallerPrincipal().getName();
+        Set<String> roles = result.getCallerGroups();
+
+        try {
+            String accessToken = jwtService.generateAccessToken(username, roles);
+            String refreshToken = refreshTokenService.createByUsername(username);
+
+            return Response.ok(
+                    Map.of("access", accessToken,
+                            "refreshToken", refreshToken,
+                            "username", username,
+                            "roles", result.getCallerGroups())).build();
+        } catch (Exception e) {
+            LoggerFactory.getLogger(AuthResource.class).error("Login token creation failed for user: {}", username, e);
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(Map.of("error", "Request token creation failed"))
+                    .build();
+        }
     }
 
+    @Path("/refresh")
+    @POST
+    public Response refresh(@Valid @NotNull RefreshRequest request) {
+        if (request == null || request.refreshToken() == null || request.refreshToken().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "Refresh token is required"))
+                    .build();
+        }
+        String oldRefreshToken = request.refreshToken();
+
+        String newRefreshToken = "";
+        try {
+            RefreshTokenService.RefreshResult result = refreshTokenService.rotateRfToken(oldRefreshToken);
+            newRefreshToken = result.refreshToken();
+            User user = result.user();
+
+            Set<String> userRoles = user.getRoles()
+                    .stream()
+                    .map(role -> role.getName().name())
+                    .collect(Collectors.toSet());
+            String newAccessToken = jwtService.generateAccessToken(user.getUsername(), userRoles);
+            return Response.ok(
+                    Map.of(
+                            "access", newAccessToken,
+                            "refresh", newRefreshToken,
+                            "username", user.getUsername(),
+                            "roles", userRoles
+                    )).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(
+                            Response.Status.UNAUTHORIZED)
+                    .entity(Map.of("error", "Invalid or expired refresh token"))
+                    .build();
+        }
+    }
 
 }

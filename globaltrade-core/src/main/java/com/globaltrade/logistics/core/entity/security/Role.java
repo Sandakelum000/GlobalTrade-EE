@@ -9,6 +9,9 @@ import java.util.Set;
 
 @Entity
 @Table(name = "roles")
+@NamedQueries({
+        @NamedQuery(name = "Role.findByName",query = "SELECT r FROM Role r WHERE r.name=:role")
+})
 @Getter
 @Setter
 @NoArgsConstructor

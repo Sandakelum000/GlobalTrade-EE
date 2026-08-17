@@ -1,5 +1,6 @@
 package com.globaltrade.logistics.core.entity.security;
 
+import com.globaltrade.logistics.core.entity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,23 +18,24 @@ import java.time.Instant;
 @NamedQueries({
         @NamedQuery(name = "RefreshToken.findByTokenHash",query = "SELECT r FROM RefreshToken r JOIN FETCH r.user WHERE r.tokenHash=:tokenHash"),
         @NamedQuery(name = "RefreshToken.deleteToken",query = "DELETE FROM RefreshToken t WHERE t.tokenHash=:tokenHash"),
-        @NamedQuery(name = "RefreshToken.deleteExpiredTokens",query = "DELETE FROM RefreshToken t WHERE t.expiresAt<:now")
+        @NamedQuery(name = "RefreshToken.deleteExpiredTokens",query = "DELETE FROM RefreshToken t WHERE t.expiresAt<:now"),
+        @NamedQuery(name = "RefreshToken.deleteByUserId",query = "DELETE FROM RefreshToken t WHERE t.user.id=:userId")
 })
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshToken {
+public class RefreshToken extends BaseEntity {
 
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_refresh_token_user"))
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", unique = true, nullable = false, foreignKey = @ForeignKey(name = "fk_refresh_token_user"))
     private User user;
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(name = "expires_at", nullable = false,columnDefinition = "DATETIME(6)")
     private Instant expiresAt;
 
 
