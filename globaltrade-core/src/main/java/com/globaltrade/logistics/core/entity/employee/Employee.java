@@ -18,6 +18,10 @@ import lombok.*;
                 @Index(name = "idx_employee_email", columnList = "email")
         }
 )
+@NamedQueries({
+        @NamedQuery(name = "Employee.findByNumber",query = "SELECT e FROM Employee e WHERE e.employeeNumber=:employeeNumber"),
+        @NamedQuery(name = "Employee.findByEmail",query = "SELECT e FROM Employee e WHERE e.email=:email")
+})
 @Getter
 @Setter
 @Builder

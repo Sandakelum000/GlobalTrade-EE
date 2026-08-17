@@ -1,4 +1,4 @@
-package com.globaltrade.logistics.core.dto.customer;
+package com.globaltrade.logistics.core.dto.common;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

@@ -20,7 +20,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.lang.NonNull;
 
 @Stateless
-public class CustomerRegisterBean implements CustomerService {
+public class CustomerServiceBean implements CustomerService {
 
     @Inject
     private CustomerRepository customerRepository;
