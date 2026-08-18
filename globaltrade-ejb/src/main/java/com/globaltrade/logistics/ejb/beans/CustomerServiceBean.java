@@ -9,6 +9,7 @@ import com.globaltrade.logistics.core.entity.security.RoleType;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
 import com.globaltrade.logistics.core.service.CustomerService;
+import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.ejb.repository.CompanyRepository;
 import com.globaltrade.logistics.ejb.repository.CustomerRepository;
 import com.globaltrade.logistics.ejb.repository.RoleRepository;
@@ -21,6 +22,10 @@ import org.springframework.lang.NonNull;
 
 @Stateless
 public class CustomerServiceBean implements CustomerService {
+
+    private static final String SEQUENCE_KEY = "CUSTOMER";
+    private static final String PREFIX = "CUS";
+    private static final int WIDTH = 3;
 
     @Inject
     private CustomerRepository customerRepository;
@@ -37,6 +42,9 @@ public class CustomerServiceBean implements CustomerService {
     @Inject
     private RoleRepository roleRepository;
 
+    @Inject
+    private NumberSequenceService numberSequenceService;
+
     @Override
     @Transactional(Transactional.TxType.REQUIRED)
     public CustomerRegistrationResponse registerCustomer(@NonNull CustomerRegistrationRequest request) {
@@ -51,6 +59,12 @@ public class CustomerServiceBean implements CustomerService {
         Role customerRole = roleRepository.findByName(RoleType.CUSTOMER)
                 .orElseThrow(() -> new IllegalArgumentException("Customer role not configured"));
 
+        String nextCustomerNumber = numberSequenceService.next(
+                CustomerServiceBean.SEQUENCE_KEY,
+                CustomerServiceBean.PREFIX,
+                CustomerServiceBean.WIDTH
+        );
+
         User user = User.builder()
                 .username(request.username())
                 .email(request.email())
@@ -61,6 +75,7 @@ public class CustomerServiceBean implements CustomerService {
 
         //customer
         Customer customer = Customer.builder()
+                .customerNumber(nextCustomerNumber)
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .customerType(request.customerType())

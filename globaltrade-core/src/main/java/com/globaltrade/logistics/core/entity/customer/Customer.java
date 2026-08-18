@@ -13,15 +13,28 @@ import lombok.*;
 @Entity
 @Table(name = "customers",
         indexes = {
+                @Index(name = "idx_customer_number", columnList = "customer_number"),
                 @Index(name = "idx_customer_company_id", columnList = "company_id"),
                 @Index(name = "idx_customer_email", columnList = "email")
         })
+@NamedQueries({
+        @NamedQuery(name = "Customer.findByCustomerNumber",query = "SELECT c FROM Customer c WHERE c.customerNumber=:customerNumber")
+})
 @Builder
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Customer extends BaseEntity {
+    @NotBlank
+    @Size(max = 30)
+    @Column(
+            name = "customer_number",
+            nullable = false,
+            unique = true,
+            length = 30
+    )
+    private String customerNumber;
 
     @NotBlank
     @Size(max = 45)

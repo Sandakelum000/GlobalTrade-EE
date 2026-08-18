@@ -21,12 +21,7 @@ public class VendorRepository {
     }
 
     public Optional<Vendor> findById(UUID id) {
-        try {
-            Vendor vendor = em.find(Vendor.class, id);
-            return Optional.ofNullable(vendor);
-        } catch (IllegalArgumentException e) {
-            return Optional.empty();
-        }
+        return Optional.ofNullable(em.find(Vendor.class, id));
     }
 
     public  Optional<Vendor> findByUserId(UUID userId) {
@@ -34,6 +29,16 @@ public class VendorRepository {
             return Optional.of(em.createQuery("SELECT v FROM Vendor v JOIN FETCH v.user " +
                             "JOIN FETCH v.company WHERE v.user.id =:userId",Vendor.class)
                     .setParameter("userId", userId)
+                    .getSingleResult());
+        }catch (NoResultException e){
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Vendor> findByVendorNumber(String vendorNumber) {
+        try{
+            return Optional.of(em.createNamedQuery("Vendor.findByVendorNumber", Vendor.class)
+                    .setParameter("vendorNumber", vendorNumber)
                     .getSingleResult());
         }catch (NoResultException e){
             return Optional.empty();

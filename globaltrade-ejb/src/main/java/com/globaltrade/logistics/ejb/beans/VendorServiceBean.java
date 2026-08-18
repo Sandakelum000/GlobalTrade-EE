@@ -8,6 +8,7 @@ import com.globaltrade.logistics.core.entity.security.RoleType;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.core.entity.vendor.Vendor;
 import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
+import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.VendorService;
 import com.globaltrade.logistics.ejb.repository.CompanyRepository;
 import com.globaltrade.logistics.ejb.repository.RoleRepository;
@@ -20,6 +21,9 @@ import jakarta.transaction.Transactional;
 
 @Stateless
 public class VendorServiceBean implements VendorService {
+    private static final String SEQUENCE_KEY = "VENDOR";
+    private static final String PREFIX = "VEN";
+    private static final int WIDTH = 3;
 
     @Inject
     private VendorRepository vendorRepository;
@@ -36,6 +40,9 @@ public class VendorServiceBean implements VendorService {
     @Inject
     private RoleRepository roleRepository;
 
+    @Inject
+    private NumberSequenceService numberSequenceService;
+
     @Override
     @Transactional(Transactional.TxType.REQUIRED)
     public VendorRegistrationResponse registerVendor(VendorRegistrationRequest request) {
@@ -50,6 +57,12 @@ public class VendorServiceBean implements VendorService {
         Role vendorRole = roleRepository.findByName(RoleType.VENDOR)
                 .orElseThrow(() -> new IllegalArgumentException("Vendor role not configured"));
 
+        String nextVendorNumber = numberSequenceService.next(
+                VendorServiceBean.SEQUENCE_KEY,
+                VendorServiceBean.PREFIX,
+                VendorServiceBean.WIDTH
+        );
+
         User user = User.builder()
                 .username(request.username())
                 .email(request.email())
@@ -59,6 +72,7 @@ public class VendorServiceBean implements VendorService {
         userRepository.save(user);
 
         Vendor vendor = Vendor.builder()
+                .vendorNumber(nextVendorNumber)
                 .contactFirstName(request.contactFirstName())
                 .contactLastName(request.contactLastName())
                 .email(request.email())
@@ -71,7 +85,7 @@ public class VendorServiceBean implements VendorService {
         vendorRepository.save(vendor);
 
         return new VendorRegistrationResponse(
-          vendor.getId(),
+                vendor.getId(),
                 vendorCompany.getId(),
                 vendorCompany.getName(),
                 vendor.getContactFirstName(),

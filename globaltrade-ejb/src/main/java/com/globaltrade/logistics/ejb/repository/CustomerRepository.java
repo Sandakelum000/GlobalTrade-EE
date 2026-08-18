@@ -28,6 +28,16 @@ public class CustomerRepository {
         }
     }
 
+    public Optional<Customer> findByCustomerNumber(String customerNumber) {
+        try {
+            return Optional.of(entityManager.createNamedQuery("Customer.findByCustomerNumber", Customer.class)
+                    .setParameter("customerNumber", customerNumber)
+                    .getSingleResult());
+        }catch (NoResultException e) {
+            return Optional.empty();
+        }
+    }
+
     public  Optional<Customer> findByUserId(UUID userId) {
         try{
             return Optional.of(entityManager.createQuery("SELECT c FROM Customer c JOIN FETCH c.user " +

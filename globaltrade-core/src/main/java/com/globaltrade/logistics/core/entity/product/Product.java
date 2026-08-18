@@ -14,11 +14,18 @@ import java.math.BigDecimal;
 @Entity
 @Table(
         name = "products",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_product_title", columnNames = "title")
+        },
         indexes = {
                 @Index(name = "idx_product_title", columnList = "title"),
-                @Index(name = "idx_product_vendor", columnList = "vendor_id")
+                @Index(name = "idx_product_number", columnList = "product_number")
         }
 )
+@NamedQueries({
+        @NamedQuery(name = "Product.findByProductNumber",query = "SELECT p FROM Product p WHERE p.productNumber=:productNumber"),
+        @NamedQuery(name = "Product.existsByTitle",query = "SELECT COUNT(p) FROM Product p WHERE LOWER(p.title)=LOWER(:title) ")
+})
 @Builder
 @Getter
 @Setter
@@ -30,19 +37,19 @@ public class Product extends BaseEntity {
     @Column(name = "title", nullable = false, length = 150)
     private String title;
 
+    @NotBlank
+    @Size(max = 30)
+    @Column(
+            name = "product_number",
+            nullable = false,
+            unique = true,
+            length = 30
+    )
+    private String productNumber;
+
     @Size(max = 500)
     @Column(name = "description", length = 500)
     private String description;
-
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
-    @Column(
-            name = "unit_price",
-            nullable = false,
-            precision = 15,
-            scale = 2
-    )
-    private BigDecimal unitPrice;
 
     @NotNull
     @Column(
@@ -52,10 +59,4 @@ public class Product extends BaseEntity {
     @Builder.Default
     private Integer reorderLevel = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "vendor_id",
-            nullable = false
-    )
-    private Vendor vendor;
 }

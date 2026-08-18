@@ -13,22 +13,29 @@ import lombok.*;
 @Table(
         name = "vendors",
         indexes = {
-                @Index(
-                        name = "idx_vendor_company_id",
-                        columnList = "company_id"
-                ),
-                @Index(
-                        name = "idx_vendor_email",
-                        columnList = "email"
-                )
+                @Index(name = "idx_vendor_number", columnList = "vendor_number"),
+                @Index(name = "idx_vendor_company_id", columnList = "company_id"),
+                @Index(name = "idx_vendor_email", columnList = "email")
         }
 )
+@NamedQueries({
+        @NamedQuery(name = "Vendor.findByVendorNumber",query = "SELECT v FROM Vendor v WHERE v.vendorNumber=:vendorNumber")
+})
 @Builder
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Vendor extends BaseEntity {
+    @NotBlank
+    @Size(max = 30)
+    @Column(
+            name = "vendor_number",
+            nullable = false,
+            unique = true,
+            length = 30
+    )
+    private String vendorNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(

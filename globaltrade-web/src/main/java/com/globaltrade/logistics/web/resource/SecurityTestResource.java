@@ -1,6 +1,10 @@
 package com.globaltrade.logistics.web.resource;
 
+import com.globaltrade.logistics.core.entity.security.Role;
+import com.globaltrade.logistics.core.entity.security.RoleType;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -12,9 +16,19 @@ import jakarta.ws.rs.core.MediaType;
 @Transactional
 public class SecurityTestResource {
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @GET
     @Path("/public")
     public String publicEndpoint() {
+
+        for (RoleType roleType : RoleType.values()) {
+            Role role = new Role();
+            role.setName(roleType);
+            entityManager.persist(role);
+        }
+
         return "PUBLIC - anyone can access";
     }
 
