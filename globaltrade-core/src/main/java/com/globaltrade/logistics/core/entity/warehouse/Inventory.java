@@ -21,7 +21,8 @@ import java.math.BigDecimal;
 )
 @NamedQueries({
         @NamedQuery(name = "Inventory.findByWarehouseAndProduct",
-                query = "SELECT i FROM Inventory i WHERE i.warehouse.id=:warehouseId AND i.product.id=:productId")
+                query = "SELECT i FROM Inventory i WHERE i.warehouse.id=:warehouseId AND i.product.id=:productId"),
+        @NamedQuery(name = "Inventory.findById",query = "SELECT i FROM Inventory i WHERE i.id=:id")
 })
 @Builder
 @Getter

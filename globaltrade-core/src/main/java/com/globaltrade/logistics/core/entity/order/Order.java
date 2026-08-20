@@ -8,6 +8,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class Order extends BaseEntity {
     private OrderStatus orderStatus;
 
     @Column(name = "order_date",nullable = false)
-    private Instant orderDate;
+    private LocalDateTime orderDate;
 
     @Column(name = "total_amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal totalAmount;
@@ -58,4 +59,14 @@ public class Order extends BaseEntity {
     )
     @Builder.Default
     private List<Shipment> shipments = new ArrayList<>();
+
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
+    }
+
+    public void removeItem(OrderItem item) {
+        items.remove(item);
+        item.setOrder(null);
+    }
 }
