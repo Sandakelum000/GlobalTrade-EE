@@ -15,5 +15,9 @@ public record GRNRegistrationResponse(
         String status,
         BigDecimal totalCost,
         List<GRNItemResponse> items
-) {
+) implements AuditableResponse{
+    @Override
+    public UUID getEntityId() {
+        return grnId;
+    }
 }

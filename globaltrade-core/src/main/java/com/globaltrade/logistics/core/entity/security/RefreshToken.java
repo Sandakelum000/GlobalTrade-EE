@@ -3,8 +3,7 @@ package com.globaltrade.logistics.core.entity.security;
 import com.globaltrade.logistics.core.entity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -35,11 +34,14 @@ public class RefreshToken extends BaseEntity {
     @JoinColumn(name = "user_id", unique = true, nullable = false, foreignKey = @ForeignKey(name = "fk_refresh_token_user"))
     private User user;
 
-    @Column(name = "expires_at", nullable = false,columnDefinition = "DATETIME(6)")
-    private Instant expiresAt;
-
+    @Column(
+            name = "expires_at",
+            nullable = false,
+            columnDefinition = "DATETIME(6)"
+    )
+    private LocalDateTime expiresAt;
 
     public boolean isExpired() {
-        return Instant.now().isAfter(expiresAt);
+        return LocalDateTime.now().isAfter(expiresAt);
     }
 }

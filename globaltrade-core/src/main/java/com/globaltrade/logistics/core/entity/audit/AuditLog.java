@@ -1,6 +1,7 @@
 package com.globaltrade.logistics.core.entity.audit;
 
 import com.globaltrade.logistics.core.entity.common.BaseEntity;
+import com.globaltrade.logistics.core.entity.employee.EmployeeDepartment;
 import com.globaltrade.logistics.core.entity.security.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,4 +41,8 @@ public class AuditLog extends BaseEntity {
 
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action", nullable = false, length = 50)
+    private AuditAction action;
 }

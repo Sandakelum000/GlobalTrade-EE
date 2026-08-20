@@ -13,6 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -65,7 +66,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .tokenHash(hashToken(rawToken))
                 .user(user)
-                .expiresAt(Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_SECONDS))
+                .expiresAt(LocalDateTime.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_SECONDS))
                 .build();
 
         refreshTokenRepository.saveRefreshToken(refreshToken);

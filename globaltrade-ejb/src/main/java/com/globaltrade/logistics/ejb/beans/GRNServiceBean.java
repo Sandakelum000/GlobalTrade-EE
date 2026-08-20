@@ -1,6 +1,8 @@
 package com.globaltrade.logistics.ejb.beans;
 
+import com.globaltrade.logistics.core.annotation.Audited;
 import com.globaltrade.logistics.core.dto.grn.*;
+import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.grn.GRNItem;
 import com.globaltrade.logistics.core.entity.grn.GRNStatus;
 import com.globaltrade.logistics.core.entity.grn.GoodsReceiveNote;
@@ -10,10 +12,11 @@ import com.globaltrade.logistics.core.entity.warehouse.Inventory;
 import com.globaltrade.logistics.core.entity.warehouse.Warehouse;
 import com.globaltrade.logistics.core.service.GRNService;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
-import com.globaltrade.logistics.ejb.messaging.GRNEventPublisher;
+import com.globaltrade.logistics.ejb.interceptor.AuditInterceptor;
 import com.globaltrade.logistics.ejb.repository.*;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptors;
 import jakarta.transaction.Transactional;
 import org.springframework.lang.NonNull;
 
@@ -23,6 +26,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Stateless
+@Audited
+@Interceptors(AuditInterceptor.class)
 public class GRNServiceBean implements GRNService {
 
     private static final String SEQUENCE_KEY_GRN = "GRN";
@@ -43,12 +48,18 @@ public class GRNServiceBean implements GRNService {
     private InventoryRepository inventoryRepository;
     @Inject
     private NumberSequenceService numberSequenceService;
-    @Inject
-    private GRNEventPublisher grnEventPublisher;
 
     @Override
+    @Audited(
+            action = AuditAction.CREATE,
+            entity = "GoodsReceiveNote"
+    )
     @Transactional(Transactional.TxType.REQUIRED)
     public GRNRegistrationResponse createGRN(@NonNull GRNRegistrationRequest request) {
+        if (request.items() == null || request.items().isEmpty()) {
+            throw new IllegalArgumentException("GRN must contain at least one item");
+        }
+
         Vendor vendor = vendorRepository.findById(request.vendorId())
                 .orElseThrow(() -> new IllegalArgumentException("Vendor not found: " + request.vendorId()));
 
@@ -77,21 +88,23 @@ public class GRNServiceBean implements GRNService {
                     .build();
 
             grn.addItem(grnItem);
-            createInventory(warehouse, product, grnItem, grnItemRequest.sellingPrice());
         }
         grnRepository.save(grn);
 
-        GRNReceivedEvent event = new GRNReceivedEvent(
-                grn.getId(),
-                grn.getGrnNumber(),
-                grn.getVendor().getId(),
-                grn.getWarehouse().getId()
-        );
-        grnEventPublisher.publish(event);
+        if (grn.getItems().size() != request.items().size()) {
+            throw new IllegalStateException("GRN item count does not match registration request");
+        }
+
+        for(int i = 0; i < grn.getItems().size(); i++) {
+            GRNItem grnItem = grn.getItems().get(i);
+            GRNItemRequest grnItemRequest = request.items().get(i);
+
+            createInventoryStock(warehouse,grnItem.getProduct(),grnItem,grnItemRequest.sellingPrice());
+        }
         return toResponse(grn);
     }
 
-    private void createInventory(Warehouse warehouse, Product product, GRNItem grnItem, BigDecimal sellingPrice) {
+    private void createInventoryStock(Warehouse warehouse, Product product, GRNItem grnItem, BigDecimal sellingPrice) {
         String nextInventoryNumber =
                 numberSequenceService.next(SEQUENCE_KEY_INVENTORY, PREFIX_INVENTORY, WIDTH);
         Inventory inventory = Inventory.builder()
@@ -108,6 +121,10 @@ public class GRNServiceBean implements GRNService {
 
     @Override
     @Transactional(Transactional.TxType.REQUIRED)
+    @Audited(
+            action = AuditAction.CANCEL,
+            entity = "GoodsReceiveNote"
+    )
     public GRNRegistrationResponse cancelGRN(UUID grnId) {
         GoodsReceiveNote grn = grnRepository.findByGrnId(grnId)
                 .orElseThrow(() -> new IllegalArgumentException("Grn not found: " + grnId));
