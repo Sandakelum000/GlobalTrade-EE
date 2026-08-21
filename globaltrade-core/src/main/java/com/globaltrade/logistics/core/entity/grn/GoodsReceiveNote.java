@@ -23,7 +23,7 @@ import java.util.List;
         }
 )
 @NamedQueries({
-        @NamedQuery(name = "GRN.findByGrnNumber",query = "SELECT g FROM GoodsReceiveNote g WHERE g.grnNumber=:grnNumber")
+        @NamedQuery(name = "GRN.findByGrnNumber",query = "SELECT g FROM GoodsReceiveNote g WHERE g.grnNumber=:grnNumber"),
 })
 @Getter
 @Setter

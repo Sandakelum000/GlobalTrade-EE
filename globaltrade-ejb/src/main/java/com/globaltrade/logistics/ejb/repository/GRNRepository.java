@@ -1,5 +1,6 @@
 package com.globaltrade.logistics.ejb.repository;
 
+import com.globaltrade.logistics.core.entity.grn.GRNStatus;
 import com.globaltrade.logistics.core.entity.grn.GoodsReceiveNote;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
@@ -24,6 +25,18 @@ public class GRNRepository {
             return Optional.of(entityManager.find(GoodsReceiveNote.class, grnId));
         }catch(IllegalArgumentException e){
             return Optional.empty();
+        }
+    }
+
+    public long receivedCountByVendor(UUID vendorId) {
+        try{
+            return entityManager.createQuery("SELECT COUNT(g) FROM GoodsReceiveNote g" +
+                            " WHERE g.vendor.id=:vendorId " + "AND g.status=:status", Long.class)
+                    .setParameter("vendorId", vendorId)
+                    .setParameter("status", GRNStatus.RECEIVED)
+                    .getSingleResult();
+        }catch(NoResultException e){
+            return 0;
         }
     }
 

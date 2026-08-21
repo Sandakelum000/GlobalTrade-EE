@@ -1,12 +1,14 @@
 package com.globaltrade.logistics.ejb.repository;
 
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
+import com.globaltrade.logistics.core.entity.warehouse.InventoryStatus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +33,12 @@ public class InventoryRepository {
         }catch(NoResultException ex){
             return Optional.empty();
         }
+    }
+
+    public List<Inventory> findLowStock() {
+        return entityManager.createNamedQuery("Inventory.findLowStock",Inventory.class)
+                .setParameter("status", InventoryStatus.ACTIVE)
+                .getResultList();
     }
 
     public Optional<Inventory> findByWarehouseAndProduct(UUID warehouseId, UUID productId) {

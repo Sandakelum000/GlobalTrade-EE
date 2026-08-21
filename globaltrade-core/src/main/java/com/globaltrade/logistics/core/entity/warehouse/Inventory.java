@@ -22,7 +22,10 @@ import java.math.BigDecimal;
 @NamedQueries({
         @NamedQuery(name = "Inventory.findByWarehouseAndProduct",
                 query = "SELECT i FROM Inventory i WHERE i.warehouse.id=:warehouseId AND i.product.id=:productId"),
-        @NamedQuery(name = "Inventory.findById",query = "SELECT i FROM Inventory i WHERE i.id=:id")
+        @NamedQuery(name = "Inventory.findById",
+                query = "SELECT i FROM Inventory i WHERE i.id=:id"),
+        @NamedQuery(name = "Inventory.findLowStock",
+                query = "SELECT i FROM Inventory i WHERE (i.quantity - i.reservedQuantity) <= i.reorderLevel AND i.status=:status")
 })
 @Builder
 @Getter
@@ -81,6 +84,10 @@ public class Inventory extends BaseEntity {
     @Builder.Default
     private InventoryStatus status = InventoryStatus.ACTIVE;
 
+    @Column(name = "reorder_level", nullable = false)
+    @Builder.Default
+    private Integer reorderLevel = 10;
+
 
     public int getAvailableQuantity() {
         return quantity - reservedQuantity;
@@ -122,5 +129,9 @@ public class Inventory extends BaseEntity {
         }
 
         this.reservedQuantity -= amount;
+    }
+
+    public boolean isLowStock() {
+        return getAvailableQuantity() <= reorderLevel;
     }
 }

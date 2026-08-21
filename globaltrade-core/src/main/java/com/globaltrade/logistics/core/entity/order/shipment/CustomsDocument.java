@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -13,6 +14,10 @@ import java.time.Instant;
                 @Index(name = "idx_customs_document_shipment", columnList = "shipment_id")
         }
 )
+@NamedQueries({
+        @NamedQuery(name = "CustomDocument.findByShipmentId"
+                ,query = "SELECT c FROM CustomsDocument c WHERE c.shipment.id=:shipmentId ORDER BY c.issuedAt DESC")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,5 +43,5 @@ public class CustomsDocument extends BaseEntity {
     private String filePath;
 
     @Column(name = "issued_at")
-    private Instant issuedAt;
+    private LocalDateTime issuedAt;
 }

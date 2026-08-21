@@ -2,11 +2,13 @@ package com.globaltrade.logistics.ejb.repository;
 
 import com.globaltrade.logistics.core.entity.customer.Customer;
 import com.globaltrade.logistics.core.entity.vendor.Vendor;
+import com.globaltrade.logistics.core.entity.vendor.VendorStatus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,5 +53,11 @@ public class VendorRepository {
                 .getSingleResult();
 
         return count > 0;
+    }
+
+    public List<Vendor> findActiveVendors(){
+        return em.createNamedQuery("Vendor.findActiveVendors", Vendor.class)
+                .setParameter("status", VendorStatus.ACTIVE)
+                .getResultList();
     }
 }

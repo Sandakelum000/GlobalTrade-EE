@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -16,6 +17,9 @@ import java.time.Instant;
                 @Index(name = "idx_shipment_order", columnList = "order_id")
         }
 )
+@NamedQueries({
+        @NamedQuery(name = "Shipment.findActiveShipments",query = "SELECT s FROM Shipment s WHERE s.status NOT IN (:delivered,:cancelled)")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,11 +43,11 @@ public class Shipment extends BaseEntity {
     private ShipmentStatus status;
 
     @Column(name = "shipped_at")
-    private Instant shippedAt;
+    private LocalDateTime shippedAt;
 
     @Column(name = "estimated_delivery_date")
-    private Instant estimatedDeliveryDate;
+    private LocalDateTime estimatedDeliveryDate;
 
     @Column(name = "delivered_at")
-    private Instant deliveredAt;
+    private LocalDateTime deliveredAt;
 }

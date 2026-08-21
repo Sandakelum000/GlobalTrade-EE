@@ -19,7 +19,8 @@ import lombok.*;
         }
 )
 @NamedQueries({
-        @NamedQuery(name = "Vendor.findByVendorNumber",query = "SELECT v FROM Vendor v WHERE v.vendorNumber=:vendorNumber")
+        @NamedQuery(name = "Vendor.findByVendorNumber",query = "SELECT v FROM Vendor v WHERE v.vendorNumber=:vendorNumber"),
+        @NamedQuery(name = "Vendor.findActiveVendors",query = "SELECT v FROM Vendor v WHERE v.status=:status")
 })
 @Builder
 @Getter
