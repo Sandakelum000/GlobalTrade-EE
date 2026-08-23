@@ -1,7 +1,9 @@
 package com.globaltrade.logistics.core.dto.shipment;
 
+import com.globaltrade.logistics.core.entity.common.Address;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,8 +15,15 @@ public record ShipmentRegistrationResponse(
         UUID warehouseId,
         String warehouseName,
         ShipmentStatus status,
+        Address originAddress,
+        Address destinationAddress,
         LocalDateTime shippedAt,
         LocalDateTime estimatedDeliveryDate,
-        LocalDateTime deliveredAt
+        LocalDateTime deliveredAt,
+
+        BigDecimal routeDistanceKm,
+        BigDecimal routeEstimatedHours,
+        Integer routeRiskScore,
+        String routeName
 ) {
 }

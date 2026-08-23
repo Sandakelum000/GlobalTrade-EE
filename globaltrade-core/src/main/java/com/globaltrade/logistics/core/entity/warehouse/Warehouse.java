@@ -12,8 +12,7 @@ import lombok.*;
 @Table(
         name = "warehouses",
         indexes = {
-                @Index(name = "idx_warehouse_name", columnList = "name"),
-                @Index(name = "idx_warehouse_country", columnList = "country")
+                @Index(name = "idx_warehouse_name", columnList = "name")
         }
 )
 @Builder

@@ -4,6 +4,8 @@ import com.globaltrade.logistics.core.entity.employee.EmployeeDepartment;
 import com.globaltrade.logistics.core.entity.security.RoleType;
 import jakarta.validation.constraints.*;
 
+import java.util.UUID;
+
 public record EmployeeRegistrationRequest(
         @NotBlank(message = "First name is required")
         @Size(
@@ -61,6 +63,9 @@ public record EmployeeRegistrationRequest(
                 message = "Password must contain at least 8 characters, 1 letter, 1 number, and 1 special character"
         )
         String password,
+
+        @NotNull(message = "Country is required")
+        UUID countryId,
 
         @NotBlank(message = "Address line 1 is required")
         @Size(max = 150)

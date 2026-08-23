@@ -1,67 +1,84 @@
 package com.globaltrade.logistics.ejb.timer;
 
+import com.globaltrade.logistics.core.service.RouteOptimizationService;
+import com.globaltrade.logistics.core.service.VendorPerformanceService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.ejb.TimerConfig;
-import jakarta.ejb.TimerService;
+import jakarta.ejb.*;
+import jakarta.inject.Inject;
 
-//@Singleton
-//@Startup
+import java.io.Serializable;
+
+@Stateless
 public class LogisticsTimerManager {
+    private static final String TASK_VENDOR_PERFORMANCE = "VENDOR_PERFORMANCE";
+    private static final String TASK_ROUTE_OPTIMIZATION = "ROUTE_OPTIMIZATION";
 
     @Resource
     private TimerService timerService;
+    @Inject
+    private VendorPerformanceService vendorPerformanceService;
+    @Inject
+    private RouteOptimizationService routeOptimizationService;
 
     @PostConstruct
-    public void initializeTimers() {
-        createInventoryTimer();
-        createShipmentTimer();
-        createVendorPerformanceTimer();
-        createRouteOptimizationTimer();
+    public void init() {
+        if (!timerExists(TASK_ROUTE_OPTIMIZATION)) {
+            createRouteOptimizationTimer();
+        }
+        if (!timerExists(TASK_VENDOR_PERFORMANCE)) {
+            createVendorPerformanceTimer();
+        }
     }
 
-    private void createInventoryTimer() {
-        TimerConfig config = new TimerConfig("Inventory Monitoring", false);
+    @Timeout
+    public void timeout(Timer timer) {
+        Serializable info = timer.getInfo();
+        if (!(info instanceof String task)) {
+            return;
+        }
+        switch (task) {
+            case TASK_VENDOR_PERFORMANCE -> vendorPerformanceService.evaluatePerformance();
 
-        timerService.createIntervalTimer(
-                0,
-                60 * 60 * 1000, // every 1 hour
-                config
-        );
+            case TASK_ROUTE_OPTIMIZATION -> routeOptimizationService.optimizeRoutes();
+
+            default -> System.out.println("Unknown task: " + task);
+        }
     }
 
-    private void createShipmentTimer() {
-        TimerConfig config =
-                new TimerConfig("Shipment Monitoring", false);
+    public void createVendorPerformanceTimer() {
+        ScheduleExpression schedule = new ScheduleExpression();
 
-        timerService.createIntervalTimer(
-                0,
-                30 * 60 * 1000, // every 30 minutes
-                config
-        );
+        schedule.hour("*");
+        schedule.minute("*/10");
+        schedule.second("0");
+
+        createTimer(TASK_VENDOR_PERFORMANCE, schedule);
     }
 
-    private void createVendorPerformanceTimer() {
-        TimerConfig config =
-                new TimerConfig("Vendor Performance", false);
+    public void createRouteOptimizationTimer() {
+        ScheduleExpression schedule = new ScheduleExpression();
+        schedule.hour("*");
+        schedule.minute("*/10");
+        schedule.second("0");
 
-        timerService.createIntervalTimer(
-                0,
-                24 * 60 * 60 * 1000, // every 24 hours
-                config
-        );
+        createTimer(TASK_ROUTE_OPTIMIZATION, schedule);
     }
 
-    private void createRouteOptimizationTimer() {
-        TimerConfig config =
-                new TimerConfig("Route Optimization", false);
+    private boolean timerExists(String taskName) {
+        for (Timer timer : timerService.getAllTimers()) {
+            if (taskName.equals(timer.getInfo())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-        timerService.createIntervalTimer(
-                0,
-                6 * 60 * 60 * 1000, // every 6 hours
-                config
-        );
+    private void createTimer(String taskName, ScheduleExpression schedule) {
+        TimerConfig config = new TimerConfig();
+        config.setInfo(taskName);
+        config.setPersistent(true);
+
+        timerService.createCalendarTimer(schedule, config);
     }
 }

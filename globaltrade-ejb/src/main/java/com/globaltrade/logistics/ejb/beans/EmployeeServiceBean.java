@@ -3,12 +3,15 @@ package com.globaltrade.logistics.ejb.beans;
 import com.globaltrade.logistics.core.dto.employee.EmployeeRegistrationRequest;
 import com.globaltrade.logistics.core.dto.employee.EmployeeRegistrationResponse;
 import com.globaltrade.logistics.core.entity.common.Address;
+import com.globaltrade.logistics.core.entity.common.Country;
 import com.globaltrade.logistics.core.entity.employee.Employee;
 import com.globaltrade.logistics.core.entity.security.Role;
 import com.globaltrade.logistics.core.entity.security.User;
+import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
 import com.globaltrade.logistics.core.service.EmployeeService;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
+import com.globaltrade.logistics.ejb.repository.CountryRepository;
 import com.globaltrade.logistics.ejb.repository.EmployeeRepository;
 import com.globaltrade.logistics.ejb.repository.RoleRepository;
 import com.globaltrade.logistics.ejb.repository.UserRepository;
@@ -29,18 +32,16 @@ public class EmployeeServiceBean implements EmployeeService {
 
     @Inject
     private EmployeeRepository employeeRepository;
-
     @Inject
     private UserRepository userRepository;
-
     @Inject
     private RoleRepository roleRepository;
-
     @Inject
     private PasswordService passwordService;
-
     @Inject
     private NumberSequenceService numberSequenceService;
+    @Inject
+    private CountryRepository countryRepository;
 
 
     @Override
@@ -54,6 +55,9 @@ public class EmployeeServiceBean implements EmployeeService {
         if (employeeRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalArgumentException("Email already exists: " + request.email());
         }
+
+        Country country = countryRepository.getCountryById(request.countryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Country is not found: " + request.countryId()));
 
         Role employeeRole = roleRepository.findByName(request.roleType())
                 .orElseThrow(() -> new IllegalArgumentException("Role type not found: "
@@ -75,7 +79,7 @@ public class EmployeeServiceBean implements EmployeeService {
         userRepository.save(user);
 
         Address address = Address.builder()
-                .country(request.country())
+                .country(country)
                 .district(request.district())
                 .city(request.city())
                 .line1(request.addressLine1())

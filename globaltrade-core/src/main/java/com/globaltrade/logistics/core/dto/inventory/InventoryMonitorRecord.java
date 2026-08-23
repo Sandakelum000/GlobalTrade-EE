@@ -13,6 +13,6 @@ public record InventoryMonitorRecord(
         String warehouseName,
         Integer availableQuantity,
         Integer recorderLevel
-){
+) implements Serializable {
 
 }

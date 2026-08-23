@@ -1,5 +1,6 @@
 package com.globaltrade.logistics.core.dto.employee;
 
+import com.globaltrade.logistics.core.entity.common.Country;
 import com.globaltrade.logistics.core.entity.employee.EmployeeDepartment;
 import com.globaltrade.logistics.core.entity.employee.EmployeeStatus;
 
@@ -15,7 +16,7 @@ public record EmployeeRegistrationResponse(
         String mobile1,
         String mobile2,
         String departmentName,
-        String country,
+        Country country,
         String status
 ) {
 

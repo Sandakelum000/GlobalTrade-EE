@@ -19,7 +19,11 @@ import lombok.*;
 )
 @NamedQueries({
         @NamedQuery(name = "Company.findByCompanyId",query = "SELECT c FROM Company c WHERE c.id=:companyId"),
-        @NamedQuery(name = "Company.findByCompanyNumber",query = "SELECT c FROM Company c WHERE c.registrationNumber=:registrationNumber")
+        @NamedQuery(name = "Company.findByCompanyNumber",query = "SELECT c FROM Company c WHERE c.registrationNumber=:registrationNumber"),
+        @NamedQuery(
+                name = "Company.findByCountryId",
+                query = "SELECT c FROM Company c WHERE c.address.country.id = :countryId"
+        )
 })
 @Getter
 @Setter

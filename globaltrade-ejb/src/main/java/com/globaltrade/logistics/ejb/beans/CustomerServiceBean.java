@@ -7,6 +7,7 @@ import com.globaltrade.logistics.core.entity.customer.Customer;
 import com.globaltrade.logistics.core.entity.security.Role;
 import com.globaltrade.logistics.core.entity.security.RoleType;
 import com.globaltrade.logistics.core.entity.security.User;
+import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
 import com.globaltrade.logistics.core.service.CustomerService;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
@@ -50,14 +51,14 @@ public class CustomerServiceBean implements CustomerService {
     public CustomerRegistrationResponse registerCustomer(@NonNull CustomerRegistrationRequest request) {
 
         Company company = companyRepository.findById(request.companyId())
-                .orElseThrow(() -> new IllegalArgumentException("Company not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
 
         if (userRepository.findByUsername(request.username()).isPresent()) {
             throw new UsernameAlreadyExistsException(request.username());
         }
 
         Role customerRole = roleRepository.findByName(RoleType.CUSTOMER)
-                .orElseThrow(() -> new IllegalArgumentException("Customer role not configured"));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer role not configured"));
 
         String nextCustomerNumber = numberSequenceService.next(
                 CustomerServiceBean.SEQUENCE_KEY,

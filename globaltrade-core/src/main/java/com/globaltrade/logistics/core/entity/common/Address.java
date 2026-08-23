@@ -1,7 +1,6 @@
 package com.globaltrade.logistics.core.entity.common;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -46,8 +45,7 @@ public class Address implements Serializable {
     @Column(name = "postal_code", nullable = false, length = 20)
     private String postalCode;
 
-    @NotBlank
-    @Size(max = 80)
-    @Column(name = "country", nullable = false, length = 80)
-    private String country;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "country_id", nullable = false)
+    private Country country;
 }

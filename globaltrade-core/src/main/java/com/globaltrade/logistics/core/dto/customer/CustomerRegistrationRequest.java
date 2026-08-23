@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 public record CustomerRegistrationRequest(
-        //customer
         @NotBlank(message = "First name is required")
         @Size(max = 45, message = "First name must not exceed 45 characters")
         String firstName,

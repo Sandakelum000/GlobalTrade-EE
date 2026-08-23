@@ -41,24 +41,24 @@ public class AuthMechanism implements HttpAuthenticationMechanism {
         }
         //jwt validation
         try{
-            if(jwtService.isValidToken(token)){
-                DecodedJWT decodeToken = jwtService.decode(token);
-                String username = decodeToken.getSubject();
-
-                if(username == null || username.isEmpty()){
-                    return context.responseUnauthorized();
-                }
-
-                List<String> roleList = decodeToken.getClaim("roles").asList(String.class);
-                Set<String> roles = roleList == null ? Set.of() : new HashSet<>(roleList);
-
-                return context.notifyContainerAboutLogin(username,roles);
+            if (!jwtService.isValidToken(token)) {
+                return context.responseUnauthorized();
             }
+            DecodedJWT decodedToken = jwtService.decode(token);
+            String username = decodedToken.getSubject();
+
+            if (username == null || username.isBlank()) {
+                return context.responseUnauthorized();
+            }
+
+            List<String> roleList = decodedToken.getClaim("roles").asList(String.class);
+
+            Set<String> roles = roleList == null ? Set.of() : new HashSet<>(roleList);
+            return context.notifyContainerAboutLogin(username, roles);
 
         }catch (Exception e){
             return context.responseUnauthorized();
         }
-        return handleUnAuthenticated(context);
     }
 
     private AuthenticationStatus handleUnAuthenticated(HttpMessageContext context){

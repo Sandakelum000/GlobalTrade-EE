@@ -1,5 +1,6 @@
 package com.globaltrade.logistics.core.entity.order;
 
+import com.globaltrade.logistics.core.entity.common.Address;
 import com.globaltrade.logistics.core.entity.common.BaseEntity;
 import com.globaltrade.logistics.core.entity.customer.Customer;
 import com.globaltrade.logistics.core.entity.order.shipment.Shipment;
@@ -69,4 +70,31 @@ public class Order extends BaseEntity {
         items.remove(item);
         item.setOrder(null);
     }
+
+    //address
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "line1",
+                    column = @Column(name = "shipping_address_line1")),
+            @AttributeOverride(name = "line2",
+                    column = @Column(name = "shipping_address_line2")),
+            @AttributeOverride(name = "line3",
+                    column = @Column(name = "shipping_address_line3")),
+            @AttributeOverride(name = "city",
+                    column = @Column(name = "shipping_city")),
+            @AttributeOverride(name = "district",
+                    column = @Column(name = "shipping_district")),
+            @AttributeOverride(name = "stateProvince",
+                    column = @Column(name = "shipping_state_province")),
+            @AttributeOverride(name = "postalCode",
+                    column = @Column(name = "shipping_postal_code")),
+    })
+    @AssociationOverride(
+            name = "country",
+            joinColumns = @JoinColumn(
+                    name = "shipping_country_id",
+                    nullable = false
+            )
+    )
+    private Address shippingAddress;
 }

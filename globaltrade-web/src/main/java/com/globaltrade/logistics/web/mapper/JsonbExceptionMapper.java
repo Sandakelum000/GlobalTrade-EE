@@ -16,53 +16,47 @@ import java.util.regex.Pattern;
 public class JsonbExceptionMapper
         implements ExceptionMapper<ProcessingException> {
 
+    private static final Pattern ENUM_PATTERN =
+            Pattern.compile("No enum constant ([\\w.$]+)\\.([A-Z0-9_]+)");
+
     @Override
     public Response toResponse(ProcessingException exception) {
 
         Throwable cause = exception.getCause();
-
-        if (cause instanceof JsonbException
-                && cause.getMessage() != null
-                && cause.getMessage().contains("No enum constant")) {
+        if (cause instanceof JsonbException && cause.getMessage() != null) {
 
             String message = cause.getMessage();
-
-            // Extract:
-            // CustomerType.LOCA
-            Pattern pattern = Pattern.compile(
-                    "No enum constant ([\\w.]+)\\.([A-Z0-9_]+)"
-            );
-
-            Matcher matcher = pattern.matcher(message);
+            Matcher matcher = ENUM_PATTERN.matcher(message);
 
             if (matcher.find()) {
-
                 String enumClassName = matcher.group(1);
                 String invalidValue = matcher.group(2);
 
-                if (enumClassName.endsWith("CustomerType")) {
+                String field = extractFieldName(exception);
+                String allowedValues = getAllowedEnumValues(enumClassName);
 
-                    ValidationErrorResponse response =
-                            ValidationErrorResponse.of(
-                                    "Validation failed",
-                                    "customerType",
-                                    "Invalid value '" + invalidValue
-                                            + "'. Must be one of: "
-                                            + Arrays.toString(
-                                            com.globaltrade.logistics.core.entity.customer.CustomerType.values()
-                                    ),
-                                    Response.Status.BAD_REQUEST.getStatusCode()
-                            );
+                String detail;
 
-                    return Response.status(Response.Status.BAD_REQUEST)
-                            .type(MediaType.APPLICATION_JSON)
-                            .entity(response)
-                            .build();
+                if (allowedValues != null) {
+                    detail = "Invalid value '" + invalidValue + "'. Must be one of: " + allowedValues;
+                } else {
+                    detail = "Invalid value '" + invalidValue + "'";
                 }
+                ValidationErrorResponse response =
+                        ValidationErrorResponse.of(
+                                "Validation failed",
+                                field,
+                                detail,
+                                Response.Status.BAD_REQUEST.getStatusCode()
+                        );
+
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .type(MediaType.APPLICATION_JSON)
+                        .entity(response)
+                        .build();
             }
         }
 
-        // Anything else that is a ProcessingException
         return Response.status(Response.Status.BAD_REQUEST)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(
@@ -74,5 +68,35 @@ public class JsonbExceptionMapper
                         )
                 )
                 .build();
+    }
+
+    private String getAllowedEnumValues(String enumClassName) {
+        try {
+            Class<?> enumClass = Class.forName(enumClassName);
+
+            if (!enumClass.isEnum()) {
+                return null;
+            }
+            Object[] constants = enumClass.getEnumConstants();
+            return Arrays.toString(constants);
+
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
+
+    private String extractFieldName(ProcessingException exception) {
+
+        Throwable cause = exception.getCause();
+        if (cause == null || cause.getMessage() == null) {
+            return "unknown";
+        }
+
+        String message = cause.getMessage();
+        Matcher matcher = Pattern.compile("property ['\"]?([\\w]+)['\"]?").matcher(message);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return "unknown";
     }
 }

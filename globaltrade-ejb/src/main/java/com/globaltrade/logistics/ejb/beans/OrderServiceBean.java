@@ -6,6 +6,7 @@ import com.globaltrade.logistics.core.dto.order.OrderItemResponse;
 import com.globaltrade.logistics.core.dto.order.OrderRegistrationRequest;
 import com.globaltrade.logistics.core.dto.order.OrderRegistrationResponse;
 import com.globaltrade.logistics.core.entity.audit.AuditAction;
+import com.globaltrade.logistics.core.entity.common.Address;
 import com.globaltrade.logistics.core.entity.customer.Customer;
 import com.globaltrade.logistics.core.entity.order.Order;
 import com.globaltrade.logistics.core.entity.order.OrderItem;
@@ -53,7 +54,10 @@ public class OrderServiceBean implements OrderService {
         if (request == null) {
             throw new IllegalArgumentException("Order Request is null");
         }
-        if(request.items() == null || request.items().isEmpty()) {
+        if (request.customerId() == null) {
+            throw new IllegalArgumentException("Customer ID is required");
+        }
+        if (request.items() == null || request.items().isEmpty()) {
             throw new IllegalArgumentException("Order must have at least one item");
         }
         Customer customer = customerRepository.findById(request.customerId())
@@ -64,6 +68,7 @@ public class OrderServiceBean implements OrderService {
         Order order = Order.builder()
                 .orderNumber(nextOrderNumber)
                 .customer(customer)
+                .shippingAddress(copyAddress(customer.getCompany().getAddress()))
                 .orderDate(LocalDateTime.now())
                 .orderStatus(OrderStatus.PENDING)
                 .totalAmount(BigDecimal.ZERO)
@@ -72,20 +77,33 @@ public class OrderServiceBean implements OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.items()) {
-            if(itemRequest.quantity() == null || itemRequest.quantity() <= 0) {
+            if (itemRequest == null) {
+                throw new IllegalArgumentException("Order item cannot be null");
+            }
+            if (itemRequest.inventoryId() == null) {
+                throw new IllegalArgumentException("Inventory ID is required");
+            }
+            if (itemRequest.quantity() == null || itemRequest.quantity() <= 0) {
                 throw new IllegalArgumentException("Order item quantity must be greater than zero");
             }
-            Inventory inventory = inventoryRepository.findByIdForUpdate(itemRequest.inventoryId())
+
+            Inventory inventory = inventoryRepository
+                    .findByIdForUpdate(itemRequest.inventoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Inventory not found: " + itemRequest.inventoryId()));
 
-            int reqQuantity =  itemRequest.quantity();
+            int reqQuantity = itemRequest.quantity();
 
-            if(reqQuantity > inventory.getAvailableQuantity()) {
-                throw new IllegalStateException("Insufficient quantity for product:"+inventory.getProduct().getProductNumber());
+            if (reqQuantity > inventory.getAvailableQuantity()) {
+                throw new IllegalStateException("Insufficient quantity for product:" + inventory.getProduct().getProductNumber());
             }
-            inventory.reserveStock(reqQuantity);
+
+            inventory.reserveStock(reqQuantity); // reserve stock
 
             BigDecimal unitPrice = inventory.getSellingPrice();
+            if (unitPrice == null) {
+                throw new IllegalStateException("Selling price is not configured for inventory: " + inventory.getInventoryNumber());
+            }
+
             BigDecimal itemTotal = unitPrice.multiply(BigDecimal.valueOf(reqQuantity));
 
             OrderItem orderItem = OrderItem.builder()
@@ -100,7 +118,6 @@ public class OrderServiceBean implements OrderService {
             totalAmount = totalAmount.add(itemTotal);
 
         }
-
         order.setTotalAmount(totalAmount);
         orderRepository.save(order);
         return toResponse(order);
@@ -117,11 +134,19 @@ public class OrderServiceBean implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order id not found: " + orderId));
 
-        if(order.getOrderStatus() == OrderStatus.SHIPPED || order.getOrderStatus() == OrderStatus.DELIVERED) {
-            throw new IllegalStateException("Order has been cancelled");
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Order is already cancelled");
         }
-        for(OrderItem orderItem : order.getItems()) {
-            Inventory inventory = inventoryRepository.findByIdForUpdate(orderItem.getInventory().getId())
+
+        if (order.getOrderStatus() == OrderStatus.SHIPPED ||
+                order.getOrderStatus() == OrderStatus.PROCESSING ||
+                order.getOrderStatus() == OrderStatus.DELIVERED) {
+            throw new IllegalStateException("Cannot cancel an order after processing/shipping");
+        }
+
+        for (OrderItem orderItem : order.getItems()) {
+            Inventory inventory = inventoryRepository
+                    .findByIdForUpdate(orderItem.getInventory().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Inventory not found: " + orderItem.getInventory().getId()));
 
             inventory.releaseReservedStock(orderItem.getQuantity());
@@ -148,12 +173,28 @@ public class OrderServiceBean implements OrderService {
                 order.getId(),
                 order.getOrderNumber(),
                 order.getCustomer().getCustomerNumber(),
-                order.getCustomer().getFirstName() +" "+order.getCustomer().getLastName(),
+                order.getCustomer().getFirstName() + " " + order.getCustomer().getLastName(),
                 order.getOrderStatus().name(),
                 order.getOrderDate(),
                 order.getTotalAmount(),
                 orderItemResList
         );
+    }
+
+    private Address copyAddress(Address address) {
+        if (address == null) {
+            return null;
+        }
+        return Address.builder()
+                .line1(address.getLine1())
+                .line2(address.getLine2())
+                .line3(address.getLine3())
+                .city(address.getCity())
+                .district(address.getDistrict())
+                .stateProvince(address.getStateProvince())
+                .postalCode(address.getPostalCode())
+                .country(address.getCountry())
+                .build();
     }
 
 }

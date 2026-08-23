@@ -7,6 +7,7 @@ import com.globaltrade.logistics.core.entity.security.Role;
 import com.globaltrade.logistics.core.entity.security.RoleType;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.core.entity.vendor.Vendor;
+import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.VendorService;
@@ -52,10 +53,10 @@ public class VendorServiceBean implements VendorService {
         }
 
         Company vendorCompany = companyRepository.findById(request.companyId())
-                .orElseThrow(() -> new IllegalArgumentException("Company not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
 
         Role vendorRole = roleRepository.findByName(RoleType.VENDOR)
-                .orElseThrow(() -> new IllegalArgumentException("Vendor role not configured"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor role not configured"));
 
         String nextVendorNumber = numberSequenceService.next(
                 VendorServiceBean.SEQUENCE_KEY,

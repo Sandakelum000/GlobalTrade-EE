@@ -108,6 +108,9 @@ public class Inventory extends BaseEntity {
             throw new IllegalStateException("Insufficient stock amount");
         }
         this.quantity -= amount;
+        if (quantity == 0) {
+            status = InventoryStatus.INACTIVE;
+        }
     }
 
     public void reserveStock(int amount) {

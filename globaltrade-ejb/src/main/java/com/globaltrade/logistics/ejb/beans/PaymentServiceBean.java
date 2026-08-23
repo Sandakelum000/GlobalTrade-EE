@@ -10,6 +10,8 @@ import com.globaltrade.logistics.core.entity.payment.Payment;
 import com.globaltrade.logistics.core.entity.payment.PaymentStatus;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.PaymentService;
+import com.globaltrade.logistics.core.service.ShipmentService;
+import com.globaltrade.logistics.ejb.messaging.ShipmentCreationProducer;
 import com.globaltrade.logistics.ejb.repository.OrderRepository;
 import com.globaltrade.logistics.ejb.repository.PaymentRepository;
 import jakarta.annotation.security.RolesAllowed;
@@ -32,6 +34,8 @@ public class PaymentServiceBean implements PaymentService {
     private OrderRepository orderRepository;
     @Inject
     private NumberSequenceService numberSequenceService;
+    @Inject
+    private ShipmentCreationProducer shipmentCreationProducer;
 
     @Override
     @RolesAllowed({"CUSTOMER","ADMIN"})
@@ -70,6 +74,8 @@ public class PaymentServiceBean implements PaymentService {
 
         paymentRepository.save(payment);
         order.setOrderStatus(OrderStatus.CONFIRMED);
+
+        shipmentCreationProducer.send(order.getId());
 
         return toResponse(payment);
     }
