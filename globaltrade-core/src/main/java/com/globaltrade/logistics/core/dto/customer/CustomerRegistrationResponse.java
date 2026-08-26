@@ -11,8 +11,6 @@ public record CustomerRegistrationResponse(
         String firstName,
         String lastName,
         String email,
-        String mobile1,
-        String mobile2,
         UUID companyId,
         CustomerType customerType,
         CustomerStatus status,

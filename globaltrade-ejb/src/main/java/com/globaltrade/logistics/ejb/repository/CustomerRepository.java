@@ -28,6 +28,15 @@ public class CustomerRepository {
         }
     }
 
+    public long countAll() {
+        try{
+            return entityManager.createQuery("SELECT COUNT(c) FROM Customer c", Long.class)
+                    .getSingleResult();
+        }catch(NoResultException ex){
+            return 0;
+        }
+    }
+
     public Optional<Customer> findByCustomerNumber(String customerNumber) {
         try {
             return Optional.of(entityManager.createNamedQuery("Customer.findByCustomerNumber", Customer.class)

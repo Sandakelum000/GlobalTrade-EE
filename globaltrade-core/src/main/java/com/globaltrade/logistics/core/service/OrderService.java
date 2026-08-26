@@ -8,6 +8,6 @@ import java.util.UUID;
 
 @Local
 public interface OrderService {
-    OrderRegistrationResponse createOrder(OrderRegistrationRequest request);
+    OrderRegistrationResponse createOrder(OrderRegistrationRequest request,UUID customerId);
     OrderRegistrationResponse cancelOrder(UUID orderId);
 }

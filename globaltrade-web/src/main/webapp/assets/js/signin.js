@@ -1,6 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Exact context path matching AuthResource mappings (/globaltrade/logistics/api/auth/login)
-    const API_BASE_URL = '/globaltrade/logistics/api';
+    // Dynamic Context Path Resolution
+    const getContextPath = () => {
+        const path = window.location.pathname;
+        const secondSlash = path.indexOf('/', 1);
+        return (secondSlash !== -1 ? path.substring(0, secondSlash) : '') + '/logistics/api';
+    };
+
+    const API_BASE_URL = getContextPath();
 
     // DOM Elements
     const loginForm = document.getElementById('loginForm');
@@ -18,23 +24,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const alertIcon = document.getElementById('alertIcon');
     const alertMessage = document.getElementById('alertMessage');
 
-    // ==========================================
-    // 1. Password Visibility Toggle
-    // ==========================================
-    togglePasswordBtn.addEventListener('click', () => {
-        const isPassword = passwordInput.getAttribute('type') === 'password';
-        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-        toggleIcon.className = isPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
-    });
+    // Password Visibility Toggle
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            toggleIcon.className = isPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        });
+    }
 
-    // ==========================================
-    // 2. Token Management & API Interceptor
-    // ==========================================
+    // Role-based Navigation Helper
+    function redirectUserBasedOnRole(roles) {
+        let rolesList = [];
+        if (Array.isArray(roles)) {
+            rolesList = roles;
+        } else if (typeof roles === 'string') {
+            try {
+                rolesList = JSON.parse(roles);
+            } catch (e) {
+                rolesList = [roles];
+            }
+        }
 
-    /**
-     * Calls POST /auth/refresh using RefreshRequest DTO payload {"refreshToken": "..."}
-     * Maps to AuthResource.refresh(@Valid @NotNull RefreshRequest request)
-     */
+        const isAdmin = rolesList.some(r => {
+            const roleStr = typeof r === 'string' ? r : r.roleType || r.name || '';
+            return roleStr.toUpperCase() === 'ADMIN';
+        });
+
+        if (isAdmin) {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+    }
+
+    // Fixed Refresh Access Token
     async function refreshAccessToken() {
         const refreshToken = localStorage.getItem('refresh_token');
 
@@ -57,19 +81,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await response.json();
 
-        // AuthResource response structure: { access, refresh, username, roles }
-        localStorage.setItem('access_token', data.access);
-        localStorage.setItem('refresh_token', data.refresh);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('roles', JSON.stringify(data.roles));
+        // Handle both property names (refresh or refreshToken) safely
+        const newAccessToken = data.access || data.accessToken;
+        const newRefreshToken = data.refresh || data.refreshToken || refreshToken;
 
-        return data.access;
+        localStorage.setItem('access_token', newAccessToken);
+        localStorage.setItem('refresh_token', newRefreshToken);
+        if (data.username) localStorage.setItem('username', data.username);
+        if (data.roles) localStorage.setItem('roles', JSON.stringify(data.roles));
+
+        return newAccessToken;
     }
 
-    /**
-     * Custom fetch wrapper for authenticated endpoints.
-     * Automatically attaches Authorization: Bearer <token> and handles 401 recovery via refresh.
-     */
+    // Authenticated Fetch Wrapper
     async function authenticatedFetch(url, options = {}) {
         options.headers = options.headers || {};
         let accessToken = localStorage.getItem('access_token');
@@ -80,12 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let response = await fetch(url, options);
 
-        // If AuthMechanism returns 401 (Unauthorized/Expired JWT)
         if (response.status === 401) {
             try {
                 const newAccessToken = await refreshAccessToken();
-
-                // Retry original request with freshly acquired access token
                 options.headers['Authorization'] = `Bearer ${newAccessToken}`;
                 response = await fetch(url, options);
             } catch (error) {
@@ -103,9 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('roles');
     }
 
-    // ==========================================
-    // 3. Automated Active Session Check
-    // ==========================================
+    // Automated Active Session Check
     async function checkExistingSession() {
         const accessToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
@@ -113,12 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (accessToken || refreshToken) {
             try {
                 const response = await authenticatedFetch(`${API_BASE_URL}/auth/me`);
-
                 if (response.ok) {
                     const user = localStorage.getItem('username') || 'User';
+                    const roles = localStorage.getItem('roles');
                     showAlert(`Active session detected for ${user}. Redirecting...`, 'success');
                     setTimeout(() => {
-                        window.location.href = '/globaltrade/logistics/dashboard.html';
+                        redirectUserBasedOnRole(roles);
                     }, 800);
                 }
             } catch (err) {
@@ -127,12 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Run session check on page load
     checkExistingSession();
 
-    // ==========================================
-    // 4. Form Submission & POST /auth/login
-    // ==========================================
+    // Login Form Submit Handler
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -147,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoading(true);
 
         try {
-            // Direct POST call matching AuthResource @Path("/login")
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
@@ -159,16 +174,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                // Backend maps: { "access": ..., "refreshToken": ..., "username": ..., "roles": ... }
-                localStorage.setItem('access_token', data.access);
-                localStorage.setItem('refresh_token', data.refreshToken);
+                const accessToken = data.access || data.accessToken;
+                const refreshToken = data.refresh || data.refreshToken;
+
+                localStorage.setItem('access_token', accessToken);
+                localStorage.setItem('refresh_token', refreshToken);
                 localStorage.setItem('username', data.username);
                 localStorage.setItem('roles', JSON.stringify(data.roles));
 
                 showAlert(`Authentication verified. Welcome back, ${data.username}!`, 'success');
 
                 setTimeout(() => {
-                    window.location.href = '/globaltrade/logistics/dashboard.html';
+                    redirectUserBasedOnRole(data.roles);
                 }, 1000);
 
             } else {
@@ -183,12 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Expose authenticatedFetch globally for other modules in your project
     window.authenticatedFetch = authenticatedFetch;
 
-    // ==========================================
-    // 5. UI Helpers (Clean Alert Logic & Autofill Prevention)
-    // ==========================================
     function setLoading(isLoading) {
         submitBtn.disabled = isLoading;
         if (isLoading) {
@@ -204,19 +217,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showAlert(message, type = 'error') {
         alertMessage.textContent = message;
-
-        // Base class reset without trailing space issues
         alertContainer.className = 'mb-6 p-4 rounded-xl text-xs font-mono border flex items-center gap-3 transition-all duration-300';
 
         if (type === 'error') {
-            alertContainer.classList.add('bg-gray-50', 'border-red-200', 'text-red-600');
+            alertContainer.classList.add('bg-zinc-50', 'border-red-200', 'text-red-600');
             alertIcon.className = 'fa-solid fa-triangle-exclamation text-red-500';
         } else if (type === 'success') {
-            alertContainer.classList.add('bg-gray-50', 'border-emerald-200', 'text-emerald-700');
+            alertContainer.classList.add('bg-zinc-50', 'border-emerald-200', 'text-emerald-700');
             alertIcon.className = 'fa-solid fa-circle-check text-emerald-500';
         }
 
-        // Explicitly unhide the element
         alertContainer.classList.remove('hidden');
     }
 });

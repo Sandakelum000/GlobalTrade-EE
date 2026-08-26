@@ -8,21 +8,24 @@ import jakarta.ejb.*;
 import jakarta.inject.Inject;
 
 import java.io.Serializable;
+import java.util.logging.Logger;
 
 @Stateless
 public class LogisticsTimerManager {
+    private static final Logger LOGGER = Logger.getLogger(LogisticsTimerManager.class.getName());
     private static final String TASK_VENDOR_PERFORMANCE = "VENDOR_PERFORMANCE";
     private static final String TASK_ROUTE_OPTIMIZATION = "ROUTE_OPTIMIZATION";
 
     @Resource
     private TimerService timerService;
-    @Inject
+    @EJB
     private VendorPerformanceService vendorPerformanceService;
-    @Inject
+    @EJB
     private RouteOptimizationService routeOptimizationService;
 
     @PostConstruct
     public void init() {
+        LOGGER.info("LogisticsTimerManager init...");
         if (!timerExists(TASK_ROUTE_OPTIMIZATION)) {
             createRouteOptimizationTimer();
         }

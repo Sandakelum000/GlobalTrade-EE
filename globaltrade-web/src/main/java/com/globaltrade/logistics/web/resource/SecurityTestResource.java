@@ -17,6 +17,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
+import java.util.UUID;
 
 @Path("/test")
 @Produces(MediaType.TEXT_PLAIN)
@@ -33,36 +34,38 @@ public class SecurityTestResource {
     @Path("/public")
     public String publicEndpoint() {
 
-        for (RoleType roleType : RoleType.values()) {
-            Role role = new Role();
-            role.setName(roleType);
-            entityManager.persist(role);
-        }
-
-
-        List<String> countryList = List.of("Sri Lanka", "China","India","Singapore","Malaysia","Japan","Australia","United Arab Emirates","Saudi Arabia","Germany","Netherlands","United Kingdom","France","Switzerland","Canada","United States","Brazil","South Africa","Kenya","South Korea");
-
-        for (String country : countryList) {
-            Country c = new Country(country);
-            entityManager.persist(c);
-        }
-
-//        Address address = Address.builder()
-//                .country(new Country("Sri Lanka"))
-//                .city("Colombo")
-//                .district("Colombo")
-//                .postalCode("12345")
-//                .line1("No 45")
-//                .line2("New Lotus Road")
-//                .stateProvince("Western")
-//                .build();
+//        for (RoleType roleType : RoleType.values()) {
+//            Role role = new Role();
+//            role.setName(roleType);
+//            entityManager.persist(role);
+//        }
 //
-//        Warehouse warehouse = Warehouse.builder()
-//                .name("GlobalTrade-Warehouse-A")
-//                .address(address)
-//                .build();
 //
-//        entityManager.persist(warehouse);
+//        List<String> countryList = List.of("Sri Lanka", "China","India","Singapore","Malaysia","Japan","Australia","United Arab Emirates","Saudi Arabia","Germany","Netherlands","United Kingdom","France","Switzerland","Canada","United States","Brazil","South Africa","Kenya","South Korea");
+//
+//        for (String country : countryList) {
+//            Country c = new Country(country);
+//            entityManager.persist(c);
+//        }
+
+        Country country = entityManager.find(Country.class, UUID.fromString("31d9a25e-9efd-11f1-913b-58733aca4705"));
+
+        Address address = Address.builder()
+                .country(country)
+                .city("Colombo")
+                .district("Colombo")
+                .postalCode("12345")
+                .line1("No 45")
+                .line2("New Lotus Road")
+                .stateProvince("Western")
+                .build();
+
+        Warehouse warehouse = Warehouse.builder()
+                .name("GlobalTrade-Warehouse-A")
+                .address(address)
+                .build();
+
+        entityManager.persist(warehouse);
 
         return "PUBLIC - anyone can access";
     }

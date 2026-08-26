@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.UUID;
 
 public record OrderRegistrationRequest(
-        @NotNull(message = "Customer Id is required")
-        UUID customerId,
         @NotNull(message = "At least one order item is required")
         List<OrderItemRequest> items
 ) {

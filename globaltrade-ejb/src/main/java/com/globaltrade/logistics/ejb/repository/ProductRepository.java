@@ -25,12 +25,22 @@ public class ProductRepository {
         return count > 0;
     }
 
+    public long countAll() {
+        try {
+            return entityManager.createQuery("SELECT COUNT(p) FROM Product p",
+                            Long.class)
+                    .getSingleResult();
+        } catch (NoResultException ex) {
+            return 0;
+        }
+    }
+
     public Optional<Product> findByProductNumber(String productNumber) {
-        try{
+        try {
             return Optional.of(entityManager.createNamedQuery("Product.findByProductNumber", Product.class)
                     .setParameter("productNumber", productNumber)
                     .getSingleResult());
-        }catch (NoResultException e){
+        } catch (NoResultException e) {
             return Optional.empty();
         }
     }

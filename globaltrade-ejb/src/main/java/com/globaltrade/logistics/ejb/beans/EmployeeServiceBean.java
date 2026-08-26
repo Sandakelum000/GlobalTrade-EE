@@ -11,7 +11,7 @@ import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
 import com.globaltrade.logistics.core.service.EmployeeService;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
-import com.globaltrade.logistics.ejb.repository.CountryRepository;
+import com.globaltrade.logistics.ejb.repository.ContentRepository;
 import com.globaltrade.logistics.ejb.repository.EmployeeRepository;
 import com.globaltrade.logistics.ejb.repository.RoleRepository;
 import com.globaltrade.logistics.ejb.repository.UserRepository;
@@ -41,7 +41,7 @@ public class EmployeeServiceBean implements EmployeeService {
     @Inject
     private NumberSequenceService numberSequenceService;
     @Inject
-    private CountryRepository countryRepository;
+    private ContentRepository contentRepository;
 
 
     @Override
@@ -56,7 +56,7 @@ public class EmployeeServiceBean implements EmployeeService {
             throw new IllegalArgumentException("Email already exists: " + request.email());
         }
 
-        Country country = countryRepository.getCountryById(request.countryId())
+        Country country = contentRepository.getCountryById(request.countryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Country is not found: " + request.countryId()));
 
         Role employeeRole = roleRepository.findByName(request.roleType())

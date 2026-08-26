@@ -91,10 +91,6 @@ public record EmployeeRegistrationRequest(
         @Size(max = 20)
         String postalCode,
 
-        @NotBlank(message = "Country is required")
-        @Size(max = 80)
-        String country,
-
         @NotNull(message = "Role type is required")
         RoleType roleType
 ) {

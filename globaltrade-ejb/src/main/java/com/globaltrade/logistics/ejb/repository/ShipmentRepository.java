@@ -1,5 +1,7 @@
 package com.globaltrade.logistics.ejb.repository;
 
+import com.globaltrade.logistics.core.dto.admin.dashboard.AdminShipmentResponse;
+import com.globaltrade.logistics.core.dto.customer.dashboard.ShipmentStatusCountResponse;
 import com.globaltrade.logistics.core.entity.order.shipment.Shipment;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -57,6 +59,107 @@ public class ShipmentRepository {
                 .setParameter("delivered", ShipmentStatus.DELIVERED)
                 .setParameter("cancelled", ShipmentStatus.CANCELLED)
                 .getResultList();
+    }
+
+    public long countActiveShipmentsByCustomerId(UUID customerId) {
+        try {
+            return entityManager.createQuery("SELECT COUNT(s) FROM Shipment s WHERE s.order.customer.id=:customerId AND s.status NOT IN (:delivered,:cancelled)", Long.class)
+                    .setParameter("customerId",customerId)
+                    .setParameter("delivered", ShipmentStatus.DELIVERED)
+                    .setParameter("cancelled", ShipmentStatus.CANCELLED)
+                    .getSingleResult();
+        }catch (NoResultException e){
+            return 0;
+        }
+    }
+
+    public long countByCustomerIdAndStatus(UUID customerId, ShipmentStatus status) {
+        try {
+            return entityManager.createQuery("SELECT COUNT(s) FROM Shipment s " +
+                    "WHERE s.order.customer.id=:customerId AND s.status=:status", Long.class)
+                    .setParameter("customerId",customerId)
+                    .setParameter("status",status)
+                    .getSingleResult();
+        }catch (NoResultException e){
+            return 0;
+        }
+    }
+
+    public List<Shipment> findRecentShipmentsByCustomer(UUID customerId, int limit) {
+
+        return entityManager.createQuery("SELECT s FROM Shipment s WHERE s.order.customer.id = :customerId " +
+                        "ORDER BY s.createdAt DESC ", Shipment.class)
+                .setParameter("customerId", customerId)
+                .setMaxResults(limit)
+                .getResultList();
+    }
+
+    public List<ShipmentStatusCountResponse> countShipmentsByStatus(UUID customerId) {
+
+        List<Object[]> rows = entityManager.createQuery("""
+            SELECT s.status, COUNT(s)
+            FROM Shipment s
+            WHERE s.order.customer.id = :customerId
+            GROUP BY s.status
+            """, Object[].class)
+                .setParameter("customerId", customerId)
+                .getResultList();
+
+        return rows.stream()
+                .map(row -> new ShipmentStatusCountResponse(
+                        (ShipmentStatus) row[0],
+                        ((Number) row[1]).longValue()
+                ))
+                .toList();
+    }
+
+    //admin
+    public long countActiveShipments() {
+        return entityManager.createQuery("SELECT COUNT(s) FROM Shipment s WHERE s.status " +
+                        "NOT IN (:delivered, :cancelled)", Long.class)
+                .setParameter("delivered", ShipmentStatus.DELIVERED)
+                .setParameter("cancelled", ShipmentStatus.CANCELLED)
+                .getSingleResult();
+    }
+
+    public long countByStatus(ShipmentStatus status) {
+        return entityManager.createQuery("SELECT COUNT(s) FROM Shipment s WHERE s.status = :status", Long.class)
+                .setParameter("status", status)
+                .getSingleResult();
+    }
+
+    public List<ShipmentStatusCountResponse> countShipmentsByStatus() {
+        return entityManager.createQuery("SELECT s.status, COUNT(s) FROM Shipment s GROUP BY s.status ORDER BY s.status", Object[].class)
+                .getResultList()
+                .stream()
+                .map(row -> new ShipmentStatusCountResponse(
+                        (ShipmentStatus) row[0],
+                        (Long) row[1]
+                ))
+                .toList();
+    }
+
+    public List<AdminShipmentResponse> findActiveShipmentRecords(int limit) {
+
+        return entityManager.createQuery("SELECT s FROM Shipment s WHERE s.status NOT IN (:delivered, :cancelled) ORDER BY s.createdAt DESC", Shipment.class)
+                .setParameter("delivered", ShipmentStatus.DELIVERED)
+                .setParameter("cancelled", ShipmentStatus.CANCELLED)
+                .setMaxResults(limit)
+                .getResultList()
+                .stream()
+                .map(s -> new AdminShipmentResponse(
+                        s.getId(),
+                        s.getShipmentNumber(),
+                        s.getOrder().getId(),
+                        s.getOrder().getOrderNumber(),
+                        s.getWarehouse().getId(),
+                        s.getWarehouse().getName(),
+                        s.getStatus(),
+                        s.getShippedAt(),
+                        s.getEstimatedDeliveryDate(),
+                        s.getDeliveredAt()
+                ))
+                .toList();
     }
 
 

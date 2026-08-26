@@ -11,6 +11,7 @@ import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
 import jakarta.inject.Inject;
 
+import java.time.LocalDateTime;
 import java.util.logging.Logger;
 
 @Stateless
@@ -38,6 +39,7 @@ public class InventoryAlertServiceBean implements InventoryAlertService {
                 .action(AuditAction.UPDATE)
                 .entityType("Inventory")
                 .entityId(record.inventoryNumber())
+                .actionTimestamp(LocalDateTime.now())
                 .description(details)
                 .build();
         auditRepository.save(auditLog);

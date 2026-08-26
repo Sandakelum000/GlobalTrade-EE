@@ -1,10 +1,7 @@
 package com.globaltrade.logistics.core.dto.customer;
 
 import com.globaltrade.logistics.core.entity.customer.CustomerType;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.util.UUID;
 
@@ -37,7 +34,11 @@ public record CustomerRegistrationRequest(
         String username,
 
         @NotBlank(message = "Password is required")
-        @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+        @Size(min = 8, max = 100, message = "Password must be at least 8 characters and must not be exceed 100 characters")
+        @Pattern(
+                regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+                message = "Password must contain at least 8 characters, 1 letter, 1 number, and 1 special character"
+        )
         String password,
 
         //company

@@ -26,23 +26,33 @@ public class VendorRepository {
         return Optional.ofNullable(em.find(Vendor.class, id));
     }
 
-    public  Optional<Vendor> findByUserId(UUID userId) {
-        try{
+    public Optional<Vendor> findByUserId(UUID userId) {
+        try {
             return Optional.of(em.createQuery("SELECT v FROM Vendor v JOIN FETCH v.user " +
-                            "JOIN FETCH v.company WHERE v.user.id =:userId",Vendor.class)
+                            "JOIN FETCH v.company WHERE v.user.id =:userId", Vendor.class)
                     .setParameter("userId", userId)
                     .getSingleResult());
-        }catch (NoResultException e){
+        } catch (NoResultException e) {
             return Optional.empty();
         }
     }
 
+    public long countAll() {
+        try {
+            return em.createQuery("SELECT COUNT(v) FROM Vendor v",
+                            Long.class)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return 0;
+        }
+    }
+
     public Optional<Vendor> findByVendorNumber(String vendorNumber) {
-        try{
+        try {
             return Optional.of(em.createNamedQuery("Vendor.findByVendorNumber", Vendor.class)
                     .setParameter("vendorNumber", vendorNumber)
                     .getSingleResult());
-        }catch (NoResultException e){
+        } catch (NoResultException e) {
             return Optional.empty();
         }
     }
@@ -55,7 +65,7 @@ public class VendorRepository {
         return count > 0;
     }
 
-    public List<Vendor> findActiveVendors(){
+    public List<Vendor> findActiveVendors() {
         return em.createNamedQuery("Vendor.findActiveVendors", Vendor.class)
                 .setParameter("status", VendorStatus.ACTIVE)
                 .getResultList();

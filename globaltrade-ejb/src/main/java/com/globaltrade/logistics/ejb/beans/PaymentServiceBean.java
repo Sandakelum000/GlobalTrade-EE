@@ -7,10 +7,13 @@ import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.order.Order;
 import com.globaltrade.logistics.core.entity.order.OrderStatus;
 import com.globaltrade.logistics.core.entity.payment.Payment;
+import com.globaltrade.logistics.core.entity.payment.PaymentMethod;
 import com.globaltrade.logistics.core.entity.payment.PaymentStatus;
+import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.PaymentService;
 import com.globaltrade.logistics.core.service.ShipmentService;
+import com.globaltrade.logistics.core.util.PayHereUtil;
 import com.globaltrade.logistics.ejb.messaging.ShipmentCreationProducer;
 import com.globaltrade.logistics.ejb.repository.OrderRepository;
 import com.globaltrade.logistics.ejb.repository.PaymentRepository;
@@ -21,6 +24,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Stateless
 public class PaymentServiceBean implements PaymentService {
@@ -38,19 +42,18 @@ public class PaymentServiceBean implements PaymentService {
     private ShipmentCreationProducer shipmentCreationProducer;
 
     @Override
-    @RolesAllowed({"CUSTOMER","ADMIN"})
     @Audited(
             action = AuditAction.CREATE,
             entity = "Payment"
     )
     @Transactional(Transactional.TxType.REQUIRED)
-    public PaymentRegistrationResponse makePayment(PaymentRegistrationRequest request) {
-        if(request == null) {
+    public PaymentRegistrationResponse makePayment(UUID orderId,int paymentStatus) {
+        if(orderId == null) {
             throw new IllegalArgumentException("Illegal payment request");
         }
 
-        Order order = orderRepository.findById(request.orderId())
-                .orElseThrow(() -> new IllegalArgumentException("Order id not found"));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order id not found"));
 
         if(order.getOrderStatus() == OrderStatus.CANCELLED) {
             throw new IllegalArgumentException("This order is already CANCELLED");
@@ -67,15 +70,17 @@ public class PaymentServiceBean implements PaymentService {
                 .paymentNumber(nextPaymentNumber)
                 .order(order)
                 .totalAmount(order.getTotalAmount())
-                .paymentMethod(request.paymentMethod())
-                .paymentStatus(PaymentStatus.PAID)
+                .paymentMethod(PaymentMethod.ONLINE)
+                .paymentStatus(paymentStatus == PayHereUtil.PAYMENT_SUCCESS ? PaymentStatus.PAID: PaymentStatus.FAILED)
                 .paidAt(LocalDateTime.now())
                 .build();
 
         paymentRepository.save(payment);
-        order.setOrderStatus(OrderStatus.CONFIRMED);
+        order.setOrderStatus(paymentStatus == PayHereUtil.PAYMENT_SUCCESS ? OrderStatus.CONFIRMED : OrderStatus.CANCELLED);
 
-        shipmentCreationProducer.send(order.getId());
+        if(paymentStatus == PayHereUtil.PAYMENT_SUCCESS) {
+            shipmentCreationProducer.send(order.getId());
+        }
 
         return toResponse(payment);
     }

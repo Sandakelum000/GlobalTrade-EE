@@ -21,6 +21,8 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.springframework.lang.NonNull;
 
+import java.util.UUID;
+
 @Stateless
 public class CustomerServiceBean implements CustomerService {
 
@@ -30,19 +32,14 @@ public class CustomerServiceBean implements CustomerService {
 
     @Inject
     private CustomerRepository customerRepository;
-
     @Inject
     private CompanyRepository companyRepository;
-
     @Inject
     private UserRepository userRepository;
-
     @Inject
     private PasswordService passwordService;
-
     @Inject
     private RoleRepository roleRepository;
-
     @Inject
     private NumberSequenceService numberSequenceService;
 
@@ -96,12 +93,26 @@ public class CustomerServiceBean implements CustomerService {
                 customer.getFirstName(),
                 customer.getLastName(),
                 customer.getEmail(),
-                customer.getMobile1(),
-                customer.getMobile2(),
                 customer.getCompany().getId(),
                 customer.getCustomerType(),
                 customer.getStatus(),
                 customer.isKycVerified()
         );
+    }
+    @Override
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public UUID findCustomerIdByUsername(String username) {
+
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+
+        Customer customer = customerRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for user: " + username));
+
+        return customer.getId();
     }
 }

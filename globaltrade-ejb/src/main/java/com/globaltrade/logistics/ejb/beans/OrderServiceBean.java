@@ -50,18 +50,18 @@ public class OrderServiceBean implements OrderService {
             entity = "Order"
     )
     @Transactional(Transactional.TxType.REQUIRED)
-    public OrderRegistrationResponse createOrder(OrderRegistrationRequest request) {
+    public OrderRegistrationResponse createOrder(OrderRegistrationRequest request,UUID customerId) {
         if (request == null) {
             throw new IllegalArgumentException("Order Request is null");
         }
-        if (request.customerId() == null) {
+        if (customerId == null) {
             throw new IllegalArgumentException("Customer ID is required");
         }
         if (request.items() == null || request.items().isEmpty()) {
             throw new IllegalArgumentException("Order must have at least one item");
         }
-        Customer customer = customerRepository.findById(request.customerId())
-                .orElseThrow(() -> new IllegalArgumentException("Customer number not found: " + request.customerId()));
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new IllegalArgumentException("Customer number not found: " + customerId));
 
         String nextOrderNumber = numberSequenceService.next(SEQUENCE_KEY, PREFIX, WIDTH);
 

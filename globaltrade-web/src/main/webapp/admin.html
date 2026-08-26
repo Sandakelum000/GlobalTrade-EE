@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | GlobalTrade Logistics</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-zinc-100 text-zinc-900 min-h-screen flex font-sans antialiased overflow-x-hidden select-none">
+
+<!-- Collapsible Left Navigation Sidebar -->
+<aside id="adminSidebar" class="w-64 bg-black text-zinc-300 flex flex-col fixed inset-y-0 left-0 z-30 shadow-2xl border-r border-zinc-800 transition-all duration-300">
+
+    <!-- Brand Header & Collapse Trigger -->
+    <div class="h-16 flex items-center justify-between px-4 border-b border-zinc-800">
+        <div class="flex items-center gap-3 overflow-hidden">
+            <div class="w-9 h-9 bg-white text-black rounded-lg flex items-center justify-center font-bold shadow-md shrink-0">
+                <i class="fa-solid fa-user-shield text-base"></i>
+            </div>
+            <div class="sidebar-text transition-opacity duration-200">
+                <span class="text-sm font-extrabold text-white block leading-tight tracking-tight whitespace-nowrap">GlobalTrade</span>
+                <span class="text-[11px] font-sans tracking-wide text-zinc-400 block whitespace-nowrap">Admin Command</span>
+            </div>
+        </div>
+
+        <!-- Toggle Collapse Button -->
+        <button id="sidebarToggle" class="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-zinc-900 transition-colors focus:outline-none">
+            <i id="toggleIcon" class="fa-solid fa-angles-left text-sm"></i>
+        </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-3 py-6 space-y-1.5 font-medium text-xs">
+        <button data-target="secDashboard" class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-white bg-zinc-900 border border-zinc-800" title="Dashboard">
+            <i class="fa-solid fa-chart-pie text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Dashboard</span>
+        </button>
+        <button data-target="secOrders" class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white" title="Orders">
+            <i class="fa-solid fa-box-archive text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Orders</span>
+        </button>
+        <button data-target="secShipments" class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white" title="Shipments">
+            <i class="fa-solid fa-truck-fast text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Shipments</span>
+        </button>
+        <button data-target="secInventory" class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white" title="Inventory">
+            <i class="fa-solid fa-warehouse text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Inventory</span>
+        </button>
+        <button data-target="secProducts" class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white" title="Products">
+            <i class="fa-solid fa-boxes-stacked text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Products</span>
+        </button>
+        <button data-target="secCustomers" class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white" title="Customers">
+            <i class="fa-solid fa-users text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Customers</span>
+        </button>
+        <button data-target="secVendors" class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white" title="Vendors">
+            <i class="fa-solid fa-store text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Vendors</span>
+        </button>
+    </nav>
+
+    <!-- Sidebar Signout -->
+    <div class="p-3 border-t border-zinc-800">
+        <button id="signOutBtn" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg text-xs font-semibold text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all" title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Sign Out</span>
+        </button>
+    </div>
+</aside>
+
+<!-- Main Dynamic Content Container -->
+<div id="mainWrapper" class="flex-1 ml-64 flex flex-col min-w-0 transition-all duration-300">
+
+    <!-- Top Header -->
+    <header class="h-16 bg-white border-b border-zinc-200 sticky top-0 z-20 flex items-center justify-between px-8">
+        <div>
+            <h1 id="currentPageTitle" class="text-base font-extrabold text-black tracking-tight">Executive Control Center</h1>
+            <p id="currentPageSubtitle" class="text-xs text-zinc-500">Global system metrics, orders & financial records</p>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button id="refreshDataBtn" class="bg-black text-white hover:bg-zinc-800 font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-md flex items-center gap-2 border border-zinc-900">
+                <i class="fa-solid fa-rotate-right text-xs"></i>
+                <span>Sync Metrics</span>
+            </button>
+
+            <div class="h-6 w-px bg-zinc-200"></div>
+
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                    <span id="userAvatar">A</span>
+                </div>
+                <div class="text-left hidden sm:block">
+                    <div class="flex items-center gap-2">
+                        <span id="usernameDisplay" class="text-xs font-bold text-black block leading-tight">Admin</span>
+                        <span id="roleBadge" class="bg-black text-white text-[10px] px-2 py-0.5 rounded font-semibold">Admin</span>
+                    </div>
+                    <span class="text-[11px] text-zinc-500 block">System Administrator</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 p-8 space-y-8">
+
+        <div id="dashAlert" class="hidden p-4 rounded-xl text-xs border flex items-center gap-3 shadow-sm bg-black text-white border-zinc-900">
+            <i id="dashAlertIcon" class="fa-solid text-sm"></i>
+            <span id="dashAlertMessage" class="flex-1"></span>
+        </div>
+
+        <div id="dashLoader" class="hidden flex justify-center items-center py-20 text-zinc-500 text-xs">
+            <i class="fa-solid fa-spinner spinner text-xl mr-3 text-black"></i> Refreshing system analytics...
+        </div>
+
+        <!-- SECTION: DASHBOARD -->
+        <section id="secDashboard" class="section-pane space-y-8">
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+                <div class="p-4 bg-black text-white border border-zinc-900 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-400 mb-2">
+                        <span class="text-xs font-semibold text-zinc-300">Total Revenue</span>
+                        <i class="fa-solid fa-wallet text-emerald-400"></i>
+                    </div>
+                    <span id="metricTotalRevenue" class="text-xl font-bold text-white block truncate">$0.00</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Total Orders</span>
+                        <i class="fa-solid fa-boxes-packing text-blue-600"></i>
+                    </div>
+                    <span id="metricTotalOrders" class="text-xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Active Freight</span>
+                        <i class="fa-solid fa-truck-fast text-purple-600"></i>
+                    </div>
+                    <span id="metricActiveShipments" class="text-xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Total Customers</span>
+                        <i class="fa-solid fa-users text-indigo-600"></i>
+                    </div>
+                    <span id="metricTotalCustomers" class="text-xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Total Vendors</span>
+                        <i class="fa-solid fa-store text-amber-600"></i>
+                    </div>
+                    <span id="metricTotalVendors" class="text-xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Total Products</span>
+                        <i class="fa-solid fa-boxes-stacked text-teal-600"></i>
+                    </div>
+                    <span id="metricTotalProducts" class="text-xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-red-600 mb-2">
+                        <span class="text-xs font-semibold">Low Stock</span>
+                        <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                    </div>
+                    <span id="metricLowStockItems" class="text-xl font-bold text-red-600 block">0</span>
+                </div>
+            </div>
+
+            <!-- High Visual Contrast Chart Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 p-6 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold text-zinc-600">Monthly Revenue Stream ($)</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-semibold">Financial Growth</span>
+                    </div>
+                    <div class="h-64 relative"><canvas id="monthlyRevenueChart"></canvas></div>
+                </div>
+
+                <div class="p-6 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold text-zinc-600">Order Status Breakdown</h3>
+                        <span class="text-xs text-zinc-400">Pie Graph</span>
+                    </div>
+                    <div class="h-64 relative flex items-center justify-center"><canvas id="orderStatusPieChart"></canvas></div>
+                </div>
+
+                <div class="lg:col-span-2 p-6 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold text-zinc-600">Monthly Order Growth</h3>
+                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-semibold">Order Volume</span>
+                    </div>
+                    <div class="h-64 relative"><canvas id="monthlyOrdersChart"></canvas></div>
+                </div>
+
+                <div class="p-6 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold text-zinc-600">Freight Status Distribution</h3>
+                        <span class="text-xs text-zinc-400">Doughnut Graph</span>
+                    </div>
+                    <div class="h-64 relative flex items-center justify-center"><canvas id="shipmentStatusDoughnutChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Dashboard Table Overviews -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-zinc-200 flex items-center justify-between bg-red-50/50">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-red-600 text-sm"></i>
+                            <h3 class="text-xs font-bold text-black tracking-tight">Low Stock Alerts</h3>
+                        </div>
+                        <span class="text-xs text-red-600 font-semibold">Action Required</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                            <tr class="bg-zinc-100 text-xs font-semibold text-zinc-600 border-b border-zinc-200">
+                                <th class="py-3 px-5">Product Title</th>
+                                <th class="py-3 px-5">Warehouse</th>
+                                <th class="py-3 px-5 text-right">Stock</th>
+                                <th class="py-3 px-5 text-right">Reorder Level</th>
+                            </tr>
+                            </thead>
+                            <tbody id="lowStockTableBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-zinc-200 flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-black tracking-tight">Recent Orders Summary</h3>
+                        <span class="text-xs text-zinc-500">Latest Entries</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                            <tr class="bg-zinc-100 text-xs font-semibold text-zinc-600 border-b border-zinc-200">
+                                <th class="py-3 px-5">Order Ref</th>
+                                <th class="py-3 px-5">Created At</th>
+                                <th class="py-3 px-5">Total</th>
+                                <th class="py-3 px-5">Status</th>
+                            </tr>
+                            </thead>
+                            <tbody id="recentOrdersTableBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-zinc-200 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-black tracking-tight">Active Freight Logistics</h3>
+                    <span class="text-xs text-zinc-500">Live Shipments</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-zinc-100 text-xs font-semibold text-zinc-600 border-b border-zinc-200">
+                            <th class="py-3.5 px-6">Shipment Ref</th>
+                            <th class="py-3.5 px-6">Order Ref</th>
+                            <th class="py-3.5 px-6">Warehouse</th>
+                            <th class="py-3.5 px-6">Status</th>
+                            <th class="py-3.5 px-6">Estimated Delivery</th>
+                        </tr>
+                        </thead>
+                        <tbody id="activeShipmentsTableBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: ORDERS MANAGEMENT TABLE -->
+        <section id="secOrders" class="section-pane hidden space-y-6">
+            <!-- Header Controls & Filters -->
+            <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-black tracking-tight">Order Management</h2>
+                        <p class="text-xs text-zinc-500">Filter, sort, and click rows to review detailed customer orders.</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Total Records: <strong id="ordersTotalCount" class="text-black">0</strong>
+                        </span>
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Page: <strong id="ordersPageInfo" class="text-black">0 / 0</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-zinc-100">
+                    <div class="relative flex-1 w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                        <input type="text" id="orderSearchInput" placeholder="Search by Order #, Customer Name, or Email..."
+                               class="w-full bg-zinc-50 border border-zinc-200 rounded-lg pl-9 pr-4 py-2 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                    </div>
+
+                    <div class="w-full md:w-48">
+                        <select id="orderStatusFilter" class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="PROCESSING">Processing</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-32">
+                        <select id="orderPageSize" class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="10">10 per page</option>
+                            <option value="20" selected>20 per page</option>
+                            <option value="50">50 per page</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Data Table -->
+            <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-zinc-100 text-xs font-semibold text-zinc-600 border-b border-zinc-200 select-none">
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/60 transition-colors sortable-header" data-sort="orderNumber">
+                                Order Ref <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/60 transition-colors sortable-header" data-sort="customer.firstName">
+                                Customer <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/60 transition-colors sortable-header" data-sort="orderStatus">
+                                Status <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 text-center">Items</th>
+                            <th class="py-3.5 px-5 text-center">Shipments</th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/60 transition-colors text-right sortable-header" data-sort="totalAmount">
+                                Total Amount <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/60 transition-colors text-right sortable-header" data-sort="createdAt">
+                                Created At <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody id="ordersTableBody" class="divide-y divide-zinc-200 text-xs">
+                        <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Navigation -->
+                <div class="p-4 border-t border-zinc-200 flex items-center justify-between bg-zinc-50">
+                    <span id="ordersPaginationText" class="text-xs text-zinc-500">Showing 0 of 0 entries</span>
+
+                    <div class="flex items-center gap-2">
+                        <button id="prevPageBtn" disabled class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                        </button>
+                        <button id="nextPageBtn" disabled class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Other Placeholder Sections -->
+        <section id="secShipments" class="section-pane hidden">
+            <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center max-w-lg mx-auto shadow-sm">
+                <i class="fa-solid fa-truck-fast text-3xl text-zinc-400 mb-3 block"></i>
+                <h3 class="text-base font-bold text-black mb-1">Logistics & Shipments</h3>
+                <p class="text-xs text-zinc-500">Fleet tracking and route dispatch control.</p>
+            </div>
+        </section>
+
+        <section id="secInventory" class="section-pane hidden">
+            <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center max-w-lg mx-auto shadow-sm">
+                <i class="fa-solid fa-warehouse text-3xl text-zinc-400 mb-3 block"></i>
+                <h3 class="text-base font-bold text-black mb-1">Warehouse Stock & Inventory</h3>
+                <p class="text-xs text-zinc-500">Reorder levels & dynamic hub allocations.</p>
+            </div>
+        </section>
+
+        <section id="secProducts" class="section-pane hidden">
+            <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center max-w-lg mx-auto shadow-sm">
+                <i class="fa-solid fa-boxes-stacked text-3xl text-zinc-400 mb-3 block"></i>
+                <h3 class="text-base font-bold text-black mb-1">Product Catalog Management</h3>
+                <p class="text-xs text-zinc-500">Product parameters and catalog updates.</p>
+            </div>
+        </section>
+
+        <section id="secCustomers" class="section-pane hidden">
+            <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center max-w-lg mx-auto shadow-sm">
+                <i class="fa-solid fa-users text-3xl text-zinc-400 mb-3 block"></i>
+                <h3 class="text-base font-bold text-black mb-1">Registered Customers</h3>
+                <p class="text-xs text-zinc-500">Customer account logs and profiles.</p>
+            </div>
+        </section>
+
+        <section id="secVendors" class="section-pane hidden">
+            <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center max-w-lg mx-auto shadow-sm">
+                <i class="fa-solid fa-store text-3xl text-zinc-400 mb-3 block"></i>
+                <h3 class="text-base font-bold text-black mb-1">Vendor Network</h3>
+                <p class="text-xs text-zinc-500">Supplier directory and active contract tracking.</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Order Detail Inspection Modal -->
+<div id="orderDetailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-200">
+    <div class="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+
+        <!-- Modal Top Banner Header -->
+        <div class="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-box-open text-amber-400 text-base"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 id="modalOrderNumber" class="text-base font-bold tracking-tight">Order Details</h3>
+                        <span id="modalOrderStatusBadge"></span>
+                    </div>
+                    <p id="modalOrderMeta" class="text-xs text-zinc-400">Created: --</p>
+                </div>
+            </div>
+
+            <!-- Prominent Paid Amount Header Display -->
+            <div class="flex items-center gap-6">
+                <div class="text-right bg-zinc-800/80 border border-zinc-700/80 px-4 py-1.5 rounded-xl">
+                    <span class="text-[10px] text-zinc-400 block font-medium">Total Paid Amount</span>
+                    <span id="modalHeaderPaidAmount" class="text-lg font-extrabold text-emerald-400 block tracking-tight">$0.00</span>
+                </div>
+
+                <button id="closeOrderModalBtn" class="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body Dynamic Content -->
+        <div class="p-6 space-y-6 overflow-y-auto text-xs flex-1 bg-zinc-50/50">
+            <div id="modalOrderLoader" class="hidden py-12 text-center text-zinc-500">
+                <i class="fa-solid fa-spinner spinner text-2xl mb-2 text-black block"></i> Fetching Order Inspection Data...
+            </div>
+
+            <div id="modalOrderContent" class="space-y-6">
+                <!-- Customer & Address Summary Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <!-- Customer Profile Card -->
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-zinc-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-user text-zinc-400"></i>
+                                <h4 class="font-bold text-black text-xs">Customer Profile</h4>
+                            </div>
+                            <span id="modalCustomerNumberBadge" class="bg-zinc-100 border border-zinc-200 text-zinc-700 text-[10px] font-bold px-2 py-0.5 rounded">CUS-000</span>
+                        </div>
+                        <div class="space-y-1.5 text-zinc-700">
+                            <div class="flex justify-between"><span class="text-zinc-400">Full Name:</span> <strong id="modalCustName" class="text-black">--</strong></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Customer ID Ref:</span> <span id="modalCustId" class="text-zinc-600 font-mono text-[11px] truncate max-w-[180px]">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Username:</span> <span id="modalCustUsername">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Email Address:</span> <span id="modalCustEmail" class="text-black font-semibold">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Mobile Phone 1:</span> <span id="modalCustMobile1">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Mobile Phone 2:</span> <span id="modalCustMobile2">--</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Shipping Address Card -->
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-3">
+                        <div class="flex items-center gap-2 border-b border-zinc-100 pb-2">
+                            <i class="fa-solid fa-location-dot text-zinc-400"></i>
+                            <h4 class="font-bold text-black text-xs">Detailed Shipping Address</h4>
+                        </div>
+                        <div id="modalShippingAddress" class="text-zinc-700 space-y-1 leading-relaxed">
+                            <span class="text-zinc-400 italic">No address recorded.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Line Items Table -->
+                <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-3 bg-zinc-100 border-b border-zinc-200 flex items-center justify-between">
+                        <h4 class="font-bold text-black text-xs">Purchased Items</h4>
+                        <span id="modalItemCountBadge" class="text-[10px] bg-white border border-zinc-200 px-2.5 py-0.5 rounded font-bold">0 Items</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                            <tr class="bg-zinc-50 text-xs font-semibold text-zinc-500 border-b border-zinc-200">
+                                <th class="py-2.5 px-4">Product</th>
+                                <th class="py-2.5 px-4">Warehouse</th>
+                                <th class="py-2.5 px-4">Inventory Ref</th>
+                                <th class="py-2.5 px-4 text-center">Qty</th>
+                                <th class="py-2.5 px-4 text-right">Unit Price</th>
+                                <th class="py-2.5 px-4 text-right">Subtotal</th>
+                            </tr>
+                            </thead>
+                            <tbody id="modalOrderItemsBody" class="divide-y divide-zinc-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Freight & Shipment Tracking Sections -->
+                <div class="space-y-4">
+                    <h4 class="font-bold text-black text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-truck-fast text-zinc-400"></i> Shipments & Delivery Tracking
+                    </h4>
+                    <div id="modalShipmentsContainer" class="space-y-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-3 border-t border-zinc-200 bg-zinc-100 flex justify-end shrink-0">
+            <button id="modalOrderCloseFooterBtn" class="bg-black text-white hover:bg-zinc-800 font-bold text-xs px-5 py-2 rounded-lg transition-all shadow-sm">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
