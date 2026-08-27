@@ -47,6 +47,14 @@ public class VendorRepository {
         }
     }
 
+    public List<Vendor> findByCompanyId(UUID companyId) {
+        return em.createQuery("SELECT v FROM Vendor v WHERE v.company.id=:companyId " +
+                "AND v.status=:status ORDER BY v.contactFirstName ASC,v.contactLastName ASC",Vendor.class)
+                .setParameter("companyId", companyId)
+                .setParameter("status", VendorStatus.ACTIVE)
+                .getResultList();
+    }
+
     public Optional<Vendor> findByVendorNumber(String vendorNumber) {
         try {
             return Optional.of(em.createNamedQuery("Vendor.findByVendorNumber", Vendor.class)

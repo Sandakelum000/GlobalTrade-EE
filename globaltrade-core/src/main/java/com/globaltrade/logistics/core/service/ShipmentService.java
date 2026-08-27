@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ShipmentService {
-    List<ShipmentRegistrationResponse> createShipmentsForOrder(UUID orderId);
+    void createShipmentsForOrder(UUID orderId);
     ShipmentRegistrationResponse shipShipment(UUID shipmentId);
-    ShipmentTrackingResponse updateTracking(UUID shipmentId, ShipmentTrackingRequest request);
+    ShipmentTrackingResponse updateShipmentTracking(UUID shipmentId, ShipmentTrackingRequest request);
     List<ShipmentMonitorRecord> findActiveShipments();
 }

@@ -11,12 +11,19 @@ import com.globaltrade.logistics.core.entity.customer.Customer;
 import com.globaltrade.logistics.core.entity.order.Order;
 import com.globaltrade.logistics.core.entity.order.OrderItem;
 import com.globaltrade.logistics.core.entity.order.OrderStatus;
+import com.globaltrade.logistics.core.entity.order.shipment.Shipment;
+import com.globaltrade.logistics.core.entity.order.shipment.ShipmentItem;
+import com.globaltrade.logistics.core.entity.order.shipment.ShipmentItemStatus;
+import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
+import com.globaltrade.logistics.core.exception.OrderCancellationException;
+import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.OrderService;
 import com.globaltrade.logistics.ejb.repository.CustomerRepository;
 import com.globaltrade.logistics.ejb.repository.InventoryRepository;
 import com.globaltrade.logistics.ejb.repository.OrderRepository;
+import com.globaltrade.logistics.ejb.repository.ShipmentRepository;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
@@ -42,6 +49,8 @@ public class OrderServiceBean implements OrderService {
     private CustomerRepository customerRepository;
     @Inject
     private NumberSequenceService numberSequenceService;
+    @Inject
+    private ShipmentRepository shipmentRepository;
 
     @Override
     @RolesAllowed({"CUSTOMER", "ADMIN",})
@@ -132,24 +141,40 @@ public class OrderServiceBean implements OrderService {
     @Transactional(Transactional.TxType.REQUIRED)
     public OrderRegistrationResponse cancelOrder(UUID orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order id not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order id not found: " + orderId));
 
         if (order.getOrderStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalStateException("Order is already cancelled");
+            throw new OrderCancellationException("Order is already cancelled");
         }
 
         if (order.getOrderStatus() == OrderStatus.SHIPPED ||
-                order.getOrderStatus() == OrderStatus.PROCESSING ||
                 order.getOrderStatus() == OrderStatus.DELIVERED) {
-            throw new IllegalStateException("Cannot cancel an order after processing/shipping");
+            throw new OrderCancellationException("Cannot cancel an order after shipped or delivered");
         }
 
         for (OrderItem orderItem : order.getItems()) {
             Inventory inventory = inventoryRepository
                     .findByIdForUpdate(orderItem.getInventory().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Inventory not found: " + orderItem.getInventory().getId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Inventory not found: " + orderItem.getInventory().getId()));
 
             inventory.releaseReservedStock(orderItem.getQuantity());
+        }
+
+        List<Shipment> shipments = shipmentRepository.findByOrderId(orderId);
+        for (Shipment shipment : shipments) {
+
+            if(shipment.getStatus() == ShipmentStatus.PENDING ||
+                    shipment.getStatus() == ShipmentStatus.PROCESSING) {
+                shipment.setStatus(ShipmentStatus.CANCELLED);
+
+                if(shipment.getItems() != null){
+                    for (ShipmentItem shipmentItem :  shipment.getItems()) {
+                        shipmentItem.setStatus(ShipmentItemStatus.CANCELLED);
+                    }
+                }
+            }else{
+                throw new OrderCancellationException("Shipment Status is already cancelled");
+            }
         }
         order.setOrderStatus(OrderStatus.CANCELLED);
         return toResponse(order);

@@ -23,6 +23,10 @@ public class InventoryRepository {
         entityManager.persist(inventory);
     }
 
+    public Optional<Inventory> findById(UUID id) {
+        return Optional.ofNullable(entityManager.find(Inventory.class, id));
+    }
+
     public Optional<Inventory> findByIdForUpdate(UUID inventoryId) {
         try{
             return Optional.of(

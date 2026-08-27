@@ -48,20 +48,20 @@ public class SecurityTestResource {
 //            entityManager.persist(c);
 //        }
 
-        Country country = entityManager.find(Country.class, UUID.fromString("31d9a25e-9efd-11f1-913b-58733aca4705"));
+        Country country = entityManager.find(Country.class, UUID.fromString("31daa3f2-9efd-11f1-913b-58733aca4705"));
 
         Address address = Address.builder()
                 .country(country)
-                .city("Colombo")
-                .district("Colombo")
+                .city("Jurong East")
+                .district("Central")
                 .postalCode("12345")
-                .line1("No 45")
-                .line2("New Lotus Road")
-                .stateProvince("Western")
+                .line1("No 66")
+                .line2("New Jurong East")
+                .stateProvince("Johor")
                 .build();
 
         Warehouse warehouse = Warehouse.builder()
-                .name("GlobalTrade-Warehouse-A")
+                .name("GlobalTrade-Warehouse-B")
                 .address(address)
                 .build();
 

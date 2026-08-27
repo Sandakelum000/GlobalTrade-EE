@@ -14,20 +14,25 @@ import com.globaltrade.logistics.core.entity.order.shipment.tracking.ShipmentTra
 import com.globaltrade.logistics.core.entity.order.shipment.tracking.TrackingStatus;
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
 import com.globaltrade.logistics.core.entity.warehouse.Warehouse;
+import com.globaltrade.logistics.core.exception.ShipmentShippingException;
+import com.globaltrade.logistics.core.exception.ShipmentTrackingException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.ShipmentService;
+import com.globaltrade.logistics.ejb.interceptor.AuditInterceptor;
 import com.globaltrade.logistics.ejb.repository.*;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptors;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Stateless
+@Audited
+@Interceptors(AuditInterceptor.class)
 public class ShipmentServiceBean implements ShipmentService {
     private static final String SEQUENCE_KEY = "SHIPMENT";
     private static final String PREFIX = "SHI";
@@ -52,16 +57,17 @@ public class ShipmentServiceBean implements ShipmentService {
             entity = "Shipment"
     )
     @Transactional(Transactional.TxType.REQUIRED)
-    public List<ShipmentRegistrationResponse> createShipmentsForOrder(UUID orderId) {
+    public void createShipmentsForOrder(UUID orderId) {
 
         if (orderId == null) {
             throw new IllegalArgumentException("Order ID cannot be null");
         }
         if (shipmentRepository.existsByOrderId(orderId)) {
-            return shipmentRepository.findByOrderId(orderId)
+            shipmentRepository.findByOrderId(orderId)
                     .stream()
                     .map(this::toResponse)
                     .toList();
+            return;
         }
 
         Order order = orderRepository.findById(orderId)
@@ -123,7 +129,6 @@ public class ShipmentServiceBean implements ShipmentService {
             responses.add(toResponse(shipment));
         }
 
-        return responses;
     }
 
     @Override
@@ -135,33 +140,33 @@ public class ShipmentServiceBean implements ShipmentService {
     @Transactional(Transactional.TxType.REQUIRED)
     public ShipmentRegistrationResponse shipShipment(UUID shipmentId) {
         Shipment shipment = shipmentRepository.findById(shipmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Shipment not found id: " + shipmentId));
+                .orElseThrow(() -> new ShipmentShippingException("Shipment not found id: " + shipmentId));
 
         if (shipment.getStatus() != ShipmentStatus.PENDING) {
-            throw new IllegalStateException("This shipment is not confirmed yet");
+            throw new ShipmentShippingException("This shipment is not confirmed yet");
         }
 
-        //shipmeny Items belong to shipment
+        //shipment Items belong to shipment
         List<ShipmentItem> shipmentItems = shipmentItemRepository.findByShipmentId(shipmentId);
 
         if (shipmentItems.isEmpty()) {
-            throw new IllegalStateException("Shipment items not found");
+            throw new ShipmentShippingException("Shipment items not found");
         }
 
         for (ShipmentItem shipmentItem : shipmentItems) {
 
             OrderItem orderItem = shipmentItem.getOrderItem();
             if (orderItem == null) {
-                throw new IllegalStateException("Order Item is missing for shipment item id: " + shipmentItem.getId());
+                throw new ShipmentShippingException("Order Item is missing for shipment item id: " + shipmentItem.getId());
             }
 
             Inventory inventory = orderItem.getInventory();
 
             if (inventory == null) {
-                throw new IllegalStateException("Inventory is missing for shipment item id: " + shipmentItem.getId());
+                throw new ShipmentShippingException("Inventory is missing for shipment item id: " + shipmentItem.getId());
             }
             if (!inventory.getWarehouse().getId().equals(shipment.getWarehouse().getId())) {
-                throw new IllegalStateException("Inventory warehouse does not match shipment warehouse");
+                throw new ShipmentShippingException("Inventory warehouse does not match shipment warehouse");
             }
 
             inventory.removeStock(orderItem.getQuantity()); // actual stock update
@@ -195,27 +200,31 @@ public class ShipmentServiceBean implements ShipmentService {
             entity = "ShipmentTracking"
     )
     @Transactional(Transactional.TxType.REQUIRED)
-    public ShipmentTrackingResponse updateTracking(UUID shipmentId, ShipmentTrackingRequest request) {
+    public ShipmentTrackingResponse updateShipmentTracking(UUID shipmentId, ShipmentTrackingRequest request) {
 
         if (request == null) {
-            throw new IllegalArgumentException("Tracking request cannot be null");
+            throw new ShipmentTrackingException("Tracking request cannot be null");
         }
         if (request.status() == null) {
-            throw new IllegalArgumentException("Tracking status is required");
+            throw new ShipmentTrackingException("Tracking status is required");
         }
         if (request.location() == null || request.location().isBlank()) {
-            throw new IllegalArgumentException("Tracking location is required");
+            throw new ShipmentTrackingException("Tracking location is required");
         }
 
         Shipment shipment = shipmentRepository.findById(shipmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Shipment not found id: " + shipmentId));
+                .orElseThrow(() -> new ShipmentTrackingException("Shipment not found id: " + shipmentId));
+
+        if(shipment.getStatus() == ShipmentStatus.PENDING) {
+            throw new ShipmentTrackingException("This shipment must be shipped before tracking. Shipment id: " + shipmentId);
+        }
 
         if (shipment.getStatus() == ShipmentStatus.CANCELLED) {
-            throw new IllegalStateException("Cannot update tracking for a cancelled shipment");
+            throw new ShipmentTrackingException("Cannot update tracking for a cancelled shipment");
         }
 
         if (shipment.getStatus() == ShipmentStatus.DELIVERED) {
-            throw new IllegalStateException("Cannot update tracking after delivery");
+            throw new ShipmentTrackingException("Cannot update tracking after delivery");
         }
 
         ShipmentStatus newShipmentStatus = convertTrackingStatusToShipmentStatus(request.status());
@@ -337,6 +346,8 @@ public class ShipmentServiceBean implements ShipmentService {
         return switch (trackingStatus) {
             case LABEL_CREATED -> ShipmentStatus.PENDING;
 
+            case PROCESSING ->  ShipmentStatus.PROCESSING;
+
             case PICKED_UP -> ShipmentStatus.SHIPPED;
 
             case IN_TRANSIT,
@@ -373,7 +384,7 @@ public class ShipmentServiceBean implements ShipmentService {
         };
 
         if (!valid) {
-            throw new IllegalStateException("Invalid shipment status transition: " + currentStatus + " -> " + newStatus);
+            throw new ShipmentTrackingException("Invalid shipment status transition: " + currentStatus + " -> " + newStatus);
         }
     }
 

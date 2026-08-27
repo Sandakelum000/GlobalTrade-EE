@@ -47,6 +47,18 @@ public class ShipmentRepository {
 
     }
 
+    public Optional<Shipment> findByShipmentIdWithItems(UUID shipmentId) {
+        return entityManager.createQuery("SELECT DISTINCT s FROM Shipment s " +
+                "LEFT JOIN FETCH s.items si " +
+                "LEFT JOIN FETCH si.orderItem oi " +
+                "LEFT JOIN FETCH oi.inventory i " +
+                "LEFT JOIN FETCH i.product p " +
+                "WHERE s.id=:shipmentId", Shipment.class)
+                .setParameter("shipmentId", shipmentId)
+                .getResultList().stream().findFirst();
+    }
+
+
     public List<Shipment> findByShipmentsByOrderId(UUID orderId) {
         return entityManager.createQuery("SELECT s FROM Shipment s JOIN FETCH s.order " +
                 "JOIN FETCH s.warehouse WHERE s.order.id = :orderId", Shipment.class)

@@ -77,7 +77,7 @@ public class AdminShipmentServiceBean implements AdminShipmentService {
         }
 
         Shipment shipment =
-                shipmentRepository.findById(shipmentId)
+                shipmentRepository.findByShipmentIdWithItems(shipmentId)
                         .orElseThrow(() -> new ResourceNotFoundException("Shipment " + shipmentId + " not found"));
 
         List<AdminShipmentItemResponse> items = shipment.getItems()
