@@ -1,9 +1,10 @@
 package com.globaltrade.logistics.core.dto.admin.employee;
 
+import com.globaltrade.logistics.core.entity.common.Address;
 import com.globaltrade.logistics.core.entity.employee.EmployeeStatus;
-import com.globaltrade.logistics.core.entity.security.RoleType;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record AdminEmployeeDetailsResponse(
@@ -16,9 +17,12 @@ public record AdminEmployeeDetailsResponse(
         String email,
         String mobile,
 
-        RoleType roleType,
+        List<String> roles,
         String department,
 
+        Address address,
+
+        UUID userId,
         String username,
         EmployeeStatus status
 ) {

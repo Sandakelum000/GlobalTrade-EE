@@ -7,4 +7,5 @@ import jakarta.ejb.Local;
 @Local
 public interface AuditLogService {
     void log(User user, AuditAction auditAction, String entityType, String entityId, String description);
+    boolean existsByEntityAndAction(String entityType, String entityId, AuditAction action);
 }

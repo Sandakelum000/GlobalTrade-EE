@@ -75,6 +75,12 @@
             <i class="fa-solid fa-boxes-stacked text-sm shrink-0"></i>
             <span class="sidebar-text truncate">Products</span>
         </button>
+        <button data-target="secEmployees"
+                class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                title="Employees">
+            <i class="fa-solid fa-id-card text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Employees</span>
+        </button>
         <button data-target="secCustomers"
                 class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white"
                 title="Customers">
@@ -892,11 +898,256 @@
             </div>
         </section>
 
-        <section id="secCustomers" class="section-pane hidden">
-            <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center max-w-lg mx-auto shadow-sm">
-                <i class="fa-solid fa-users text-3xl text-zinc-400 mb-3 block"></i>
-                <h3 class="text-base font-bold text-black mb-1">Registered Customers</h3>
-                <p class="text-xs text-zinc-500">Customer account logs and profiles.</p>
+        <!-- SECTION: EMPLOYEES MANAGEMENT TABLE -->
+        <section id="secEmployees" class="section-pane hidden space-y-6">
+            <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-black tracking-tight">Employee Directory & Access Control</h2>
+                        <p class="text-xs text-zinc-500">View staff accounts, department assignments, and operational
+                            status.</p>
+                    </div>
+
+                    <button id="openRegisterEmployeeModalBtn"
+                            class="bg-black hover:bg-zinc-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-xs"></i>
+                        Register Employee
+                    </button>
+
+                    <div class="flex items-center gap-3">
+                <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                    Total Records: <strong id="employeesTotalCount" class="text-black">0</strong>
+                </span>
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                    Page: <strong id="employeesPageInfo" class="text-black">0 / 0</strong>
+                </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-zinc-100">
+                    <div class="relative flex-1 w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                        <input type="text" id="employeeSearchInput"
+                               placeholder="Search by Employee #, Name, Email, or Mobile..."
+                               class="w-full bg-zinc-50 border border-zinc-200 rounded-lg pl-9 pr-4 py-2 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                    </div>
+
+                    <div class="w-full md:w-44">
+                        <select id="employeeDepartmentFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Departments</option>
+                            <option value="MANAGEMENT">Management</option>
+                            <option value="SALES">Sales</option>
+                            <option value="LOGISTICS">Logistics</option>
+                            <option value="PROCUREMENT">Procurement</option>
+                            <option value="WAREHOUSE">Warehouse</option>
+                            <option value="FINANCE">Finance</option>
+                            <option value="CUSTOMS">Customs</option>
+                            <option value="CUSTOMER_SERVICE">Customer Service</option>
+                            <option value="IT">IT</option>
+                            <option value="HR">HR</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-36">
+                        <select id="employeeStatusFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Statuses</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                            <option value="SUSPENDED">Suspended</option>
+                            <option value="TERMINATED">Terminated</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-28">
+                        <select id="employeePageSize"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="10">10 / page</option>
+                            <option value="20" selected>20 / page</option>
+                            <option value="50">50 / page</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-zinc-100/90 text-[11px] font-bold text-zinc-600 border-b border-zinc-200 uppercase tracking-wider select-none">
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors employee-sortable-header"
+                                data-sort="employeeNumber">
+                                Employee Ref <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors employee-sortable-header"
+                                data-sort="firstName">
+                                Full Name <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors employee-sortable-header"
+                                data-sort="email">
+                                Email Address <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5">Mobile Phone</th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors employee-sortable-header"
+                                data-sort="department">
+                                Department <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors employee-sortable-header"
+                                data-sort="status">
+                                Status <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="employeesTableBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                    </table>
+                </div>
+
+                <div class="p-4 border-t border-zinc-200 flex items-center justify-between bg-zinc-50">
+                    <span id="employeesPaginationText" class="text-xs text-zinc-500">Showing 0 of 0 entries</span>
+
+                    <div class="flex items-center gap-2">
+                        <button id="employeePrevPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                        </button>
+                        <button id="employeeNextPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: CUSTOMERS MANAGEMENT TABLE -->
+        <section id="secCustomers" class="section-pane hidden space-y-6">
+            <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-black tracking-tight">Customer Account Directory</h2>
+                        <p class="text-xs text-zinc-500">Filter, inspect, and evaluate registered client accounts and order histories.</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Total Accounts: <strong id="customersTotalCount" class="text-black">0</strong>
+                        </span>
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Page: <strong id="customersPageInfo" class="text-black">0 / 0</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-zinc-100">
+                    <div class="relative flex-1 w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                        <input type="text" id="customerSearchInput"
+                               placeholder="Search by Customer #, Name, Email, or Mobile..."
+                               class="w-full bg-zinc-50 border border-zinc-200 rounded-lg pl-9 pr-4 py-2 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                    </div>
+
+                    <div class="w-full md:w-44">
+                        <select id="customerCompanyFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Companies</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-36">
+                        <select id="customerTypeFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Types</option>
+                            <option value="LOCAL">Local</option>
+                            <option value="INTERNATIONAL">International</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-36">
+                        <select id="customerStatusFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Statuses</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                            <option value="BLOCKED">Blocked</option>
+                            <option value="UNDER_REVIEW">Under Review</option>
+                            <option value="DECEASED">Deceased</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-36">
+                        <select id="customerKycFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All KYC States</option>
+                            <option value="true">Verified KYC</option>
+                            <option value="false">Unverified KYC</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-28">
+                        <select id="customerPageSize"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="10">10 / page</option>
+                            <option value="20" selected>20 / page</option>
+                            <option value="50">50 / page</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-zinc-100/90 text-[11px] font-bold text-zinc-600 border-b border-zinc-200 uppercase tracking-wider select-none">
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors customer-sortable-header"
+                                data-sort="customerNumber">
+                                Customer Ref <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors customer-sortable-header"
+                                data-sort="firstName">
+                                Full Name <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors customer-sortable-header"
+                                data-sort="company.name">
+                                Company <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors customer-sortable-header"
+                                data-sort="email">
+                                Email Address <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5">Mobile 1</th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors customer-sortable-header"
+                                data-sort="customerType">
+                                Type <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors customer-sortable-header"
+                                data-sort="status">
+                                Status <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 text-center">KYC State</th>
+                            <th class="py-3.5 px-5 text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="customersTableBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                    </table>
+                </div>
+
+                <div class="p-4 border-t border-zinc-200 flex items-center justify-between bg-zinc-50">
+                    <span id="customersPaginationText" class="text-xs text-zinc-500">Showing 0 of 0 entries</span>
+
+                    <div class="flex items-center gap-2">
+                        <button id="customerPrevPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                        </button>
+                        <button id="customerNextPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -1712,7 +1963,8 @@
 </div>
 
 <!-- Create GRN Modal -->
-<div id="createGrnModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+<div id="createGrnModal"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-zinc-200">
 
         <!-- Header -->
@@ -1726,17 +1978,20 @@
                     <p class="text-xs text-zinc-400">Receive stock from vendor into warehouse inventory</p>
                 </div>
             </div>
-            <button id="closeCreateGrnModalBtn" class="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+            <button id="closeCreateGrnModalBtn"
+                    class="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
 
         <!-- Alert Container -->
-        <div id="createGrnModalAlert" class="hidden mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
+        <div id="createGrnModalAlert"
+             class="hidden mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
             <div class="font-bold flex items-center gap-2">
                 <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
                 <span id="createGrnModalAlertMessage">Validation Error</span>
-                <span id="createGrnModalAlertStatus" class="ml-auto font-mono text-[10px] bg-red-100 px-1.5 py-0.5 rounded text-red-700"></span>
+                <span id="createGrnModalAlertStatus"
+                      class="ml-auto font-mono text-[10px] bg-red-100 px-1.5 py-0.5 rounded text-red-700"></span>
             </div>
             <div id="createGrnModalAlertField" class="font-semibold text-red-700 mt-1 hidden"></div>
             <div id="createGrnModalAlertDetail" class="text-red-600 mt-0.5 text-[11px]"></div>
@@ -1749,21 +2004,28 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-zinc-700 mb-1">Target Company <span class="text-red-500">*</span></label>
-                    <select id="createGrnCompanySelect" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black focus:outline-none focus:border-black" required>
+                    <select id="createGrnCompanySelect"
+                            class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black focus:outline-none focus:border-black"
+                            required>
                         <option value="">-- Choose Company --</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-zinc-700 mb-1">Vendor <span class="text-red-500">*</span></label>
-                    <select id="createGrnVendorSelect" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black focus:outline-none focus:border-black" disabled required>
+                    <select id="createGrnVendorSelect"
+                            class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black focus:outline-none focus:border-black"
+                            disabled required>
                         <option value="">-- Select Company First --</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-zinc-700 mb-1">Destination Warehouse <span class="text-red-500">*</span></label>
-                    <select id="createGrnWarehouseSelect" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black focus:outline-none focus:border-black" required>
+                    <label class="block text-xs font-bold text-zinc-700 mb-1">Destination Warehouse <span
+                            class="text-red-500">*</span></label>
+                    <select id="createGrnWarehouseSelect"
+                            class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black focus:outline-none focus:border-black"
+                            required>
                         <option value="">-- Select Warehouse --</option>
                     </select>
                 </div>
@@ -1773,7 +2035,8 @@
             <div class="border border-zinc-200 rounded-xl overflow-hidden bg-white">
                 <div class="px-4 py-3 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
                     <span class="text-xs font-bold text-black uppercase tracking-wider">Item Manifest Lines</span>
-                    <button type="button" id="addGrnItemRowBtn" class="text-xs font-bold bg-white hover:bg-zinc-100 text-black border border-zinc-300 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                    <button type="button" id="addGrnItemRowBtn"
+                            class="text-xs font-bold bg-white hover:bg-zinc-100 text-black border border-zinc-300 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-plus text-[10px]"></i> Add Line Item
                     </button>
                 </div>
@@ -1808,10 +2071,12 @@
 
         <!-- Footer Controls -->
         <div class="px-6 py-4 bg-zinc-50 border-t border-zinc-200 flex items-center justify-end gap-3 shrink-0">
-            <button type="button" id="cancelCreateGrnModalBtn" class="px-4 py-2 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-200 transition-colors">
+            <button type="button" id="cancelCreateGrnModalBtn"
+                    class="px-4 py-2 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-200 transition-colors">
                 Cancel
             </button>
-            <button type="button" id="submitCreateGrnBtn" class="bg-black hover:bg-zinc-800 text-white font-bold text-xs px-5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2">
+            <button type="button" id="submitCreateGrnBtn"
+                    class="bg-black hover:bg-zinc-800 text-white font-bold text-xs px-5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2">
                 <i id="createGrnIcon" class="fa-solid fa-check text-xs"></i>
                 <i id="createGrnSpinner" class="fa-solid fa-spinner spinner text-xs hidden"></i>
                 Process & Restock Inventory
@@ -1820,6 +2085,377 @@
 
     </div>
 </div>
+
+<!-- EMPLOYEE DETAILS MODAL -->
+<div id="employeeDetailsModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-200">
+    <div class="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-id-badge text-indigo-400 text-base"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 id="modalEmployeeNumber" class="text-base font-bold tracking-tight">Employee Details</h3>
+                        <span id="modalEmployeeStatusBadge"></span>
+                    </div>
+                    <p id="modalEmployeeMeta" class="text-xs text-zinc-400">Created: --</p>
+                </div>
+            </div>
+            <button id="closeEmployeeModalBtn"
+                    class="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6 overflow-y-auto text-xs flex-1 bg-zinc-50/50">
+            <div id="modalEmployeeLoader" class="hidden py-12 text-center text-zinc-500">
+                <i class="fa-solid fa-spinner spinner text-2xl mb-2 text-black block"></i> Fetching Employee Records...
+            </div>
+
+            <div id="modalEmployeeContent" class="space-y-6">
+                <!-- Personal & Contact Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-zinc-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-user text-zinc-400"></i>
+                                <h4 class="font-bold text-black text-xs">Personal Identity</h4>
+                            </div>
+                            <span id="modalEmployeeIdBadge"
+                                  class="bg-zinc-100 border border-zinc-200 text-zinc-700 text-[10px] font-mono font-bold px-2 py-0.5 rounded">UUID</span>
+                        </div>
+                        <div class="space-y-2 text-zinc-700">
+                            <div class="flex justify-between"><span class="text-zinc-400">Full Name:</span> <strong
+                                    id="modalEmpFullName" class="text-black">--</strong></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Email Address:</span> <span
+                                    id="modalEmpEmail" class="text-black font-semibold">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Mobile Phone:</span> <span
+                                    id="modalEmpMobile">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Department:</span> <strong
+                                    id="modalEmpDepartment" class="text-indigo-700">--</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- User Account & System Roles -->
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-3">
+                        <div class="flex items-center gap-2 border-b border-zinc-100 pb-2">
+                            <i class="fa-solid fa-shield-halved text-zinc-400"></i>
+                            <h4 class="font-bold text-black text-xs">Account Credentials & Access Roles</h4>
+                        </div>
+                        <div class="space-y-2 text-zinc-700">
+                            <div class="flex justify-between"><span class="text-zinc-400">System Username:</span>
+                                <strong id="modalEmpUsername" class="text-black font-mono">--</strong></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">User Account ID:</span> <span
+                                    id="modalEmpUserId"
+                                    class="text-zinc-600 font-mono text-[11px] truncate max-w-[180px]">--</span></div>
+                            <div>
+                                <span class="text-zinc-400 block mb-1">Assigned Security Roles:</span>
+                                <div id="modalEmpRolesContainer" class="flex flex-wrap gap-1.5 pt-0.5"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employee Address -->
+                <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-2">
+                    <div class="flex items-center gap-2 border-b border-zinc-100 pb-2">
+                        <i class="fa-solid fa-location-dot text-zinc-400"></i>
+                        <h4 class="font-bold text-black text-xs">Primary Residential Address</h4>
+                    </div>
+                    <div id="modalEmpAddressContainer" class="text-zinc-700 space-y-1 leading-relaxed">
+                        <span class="text-zinc-400 italic">No address recorded.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 py-3 border-t border-zinc-200 bg-zinc-100 flex justify-end shrink-0">
+            <button id="modalEmployeeCloseFooterBtn"
+                    class="bg-black text-white hover:bg-zinc-800 font-bold text-xs px-5 py-2 rounded-lg transition-all shadow-sm">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- CUSTOMER INSPECTION DETAILS MODAL -->
+<div id="customerDetailsModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-200">
+    <div class="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-users text-indigo-400 text-base"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 id="modalCustomerNumber" class="text-base font-bold tracking-tight">Customer Details</h3>
+                        <span id="modalCustomerStatusBadge"></span>
+                        <span id="modalCustomerKycBadge"></span>
+                    </div>
+                    <p id="modalCustomerMeta" class="text-xs text-zinc-400">Joined: --</p>
+                </div>
+            </div>
+            <button id="closeCustomerModalBtn"
+                    class="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6 overflow-y-auto text-xs flex-1 bg-zinc-50/50">
+            <div id="modalCustomerLoader" class="hidden py-12 text-center text-zinc-500">
+                <i class="fa-solid fa-spinner spinner text-2xl mb-2 text-black block"></i> Fetching Customer Record & Analytics...
+            </div>
+            <div id="modalCustomerContent" class="space-y-6">
+                <!-- Summary Stats Header -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-indigo-50/60 border border-indigo-200 p-4 rounded-xl">
+                    <div>
+                        <span class="text-zinc-500 text-[11px] font-semibold block uppercase">Total Executed Orders</span>
+                        <strong id="modalCustTotalOrders"
+                                class="text-xl font-extrabold text-black block mt-0.5">0</strong>
+                    </div>
+                    <div>
+                        <span class="text-zinc-500 text-[11px] font-semibold block uppercase">Lifetime Order Value</span>
+                        <strong id="modalCustTotalValue" class="text-xl font-extrabold text-emerald-700 block mt-0.5">$0.00</strong>
+                    </div>
+                    <div>
+                        <span class="text-zinc-500 text-[11px] font-semibold block uppercase">Last Order Date</span>
+                        <div id="modalCustLastOrderDate" class="text-xs font-bold text-zinc-800 block mt-1.5">--</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Customer Contact Card -->
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-zinc-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-id-badge text-zinc-400"></i>
+                                <h4 class="font-bold text-black text-xs">Personal Identity</h4>
+                            </div>
+                            <span id="modalCustomerIdBadge"
+                                  class="bg-zinc-100 border border-zinc-200 text-zinc-700 text-[10px] font-mono font-bold px-2 py-0.5 rounded">UUID</span>
+                        </div>
+                        <div class="space-y-2 text-zinc-700">
+                            <div class="flex justify-between"><span class="text-zinc-400">Full Name:</span> <strong
+                                    id="modalCustFullName" class="text-black">--</strong></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Email Address:</span> <span
+                                    id="modalCustEmailAddr" class="text-black font-semibold">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Mobile Phone 1:</span> <span
+                                    id="modalCustPhone1">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Mobile Phone 2:</span> <span
+                                    id="modalCustPhone2">--</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Company Link Card -->
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-3">
+                        <div class="flex items-center gap-2 border-b border-zinc-100 pb-2">
+                            <i class="fa-solid fa-building text-zinc-400"></i>
+                            <h4 class="font-bold text-black text-xs">Associated Entity / Classification</h4>
+                        </div>
+                        <div class="space-y-2 text-zinc-700">
+                            <div class="flex justify-between"><span class="text-zinc-400">Company Name:</span> <strong
+                                    id="modalCustCompanyName" class="text-black">--</strong></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Company Ref ID:</span> <span
+                                    id="modalCustCompanyId"
+                                    class="text-zinc-600 font-mono text-[11px] truncate max-w-[180px]">--</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-400">Customer Category:</span>
+                                <strong id="modalCustTypeTag" class="text-indigo-700">--</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-3 border-t border-zinc-200 bg-zinc-100 flex justify-end shrink-0">
+            <button id="modalCustomerCloseFooterBtn"
+                    class="bg-black text-white hover:bg-zinc-800 font-bold text-xs px-5 py-2 rounded-lg transition-all shadow-sm">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- REGISTER EMPLOYEE MODAL -->
+<div id="registerEmployeeModal"
+     class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-zinc-200">
+
+        <!-- Header -->
+        <div class="px-6 py-4 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-user-plus text-indigo-400 text-base"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base leading-tight text-white">Register New Employee</h3>
+                    <p class="text-xs text-zinc-400">Create account credentials & assign department profile</p>
+                </div>
+            </div>
+            <button id="closeRegisterEmployeeModalBtn"
+                    class="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="registerEmployeeModalAlert"
+             class="hidden mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
+            <div class="font-bold flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                <span id="registerEmployeeAlertMessage">Validation Error</span>
+                <span id="registerEmployeeAlertStatus" class="ml-auto font-mono text-[10px] bg-red-100 px-1.5 py-0.5 rounded text-red-700"></span>
+            </div>
+            <div id="registerEmployeeAlertDetail" class="text-red-600 mt-1 text-[11px]"></div>
+        </div>
+
+        <!-- Form Body -->
+        <form id="registerEmployeeForm" class="p-6 overflow-y-auto space-y-4 text-xs flex-1">
+            <!-- Account Credentials -->
+            <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
+                <h4 class="font-bold text-black text-xs uppercase tracking-wider text-zinc-500">System Account Credentials</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Username <span class="text-red-500">*</span></label>
+                        <input type="text" id="regEmpUsername" required placeholder="john_doe"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Password <span class="text-red-500">*</span></label>
+                        <input type="password" id="regEmpPassword" required placeholder="Min 8 chars, 1 num, 1 symbol"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Security Role <span class="text-red-500">*</span></label>
+                        <select id="regEmpRoleType" required
+                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                            <option value="">-- Select Role --</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="OPERATIONS_MANAGER">Operation Manager</option>
+                            <option value="LOGISTICS_OFFICER">Logistics Officer</option>
+                            <option value="WAREHOUSE_MANAGER">Warehouse Manager</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Identity & Department -->
+            <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
+                <h4 class="font-bold text-black text-xs uppercase tracking-wider text-zinc-500">Personal & Identity Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">First Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="regEmpFirstName" required placeholder="John"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Last Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="regEmpLastName" required placeholder="Doe"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Email Address <span class="text-red-500">*</span></label>
+                        <input type="email" id="regEmpEmail" required placeholder="john.doe@company.com"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Department <span class="text-red-500">*</span></label>
+                        <select id="regEmpDepartment" required
+                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                            <option value="">-- Choose Department --</option>
+                            <option value="MANAGEMENT">Management</option>
+                            <option value="SALES">Sales</option>
+                            <option value="LOGISTICS">Logistics</option>
+                            <option value="PROCUREMENT">Procurement</option>
+                            <option value="WAREHOUSE">Warehouse</option>
+                            <option value="FINANCE">Finance</option>
+                            <option value="CUSTOMS">Customs</option>
+                            <option value="CUSTOMER_SERVICE">Customer Service</option>
+                            <option value="IT">IT</option>
+                            <option value="HR">HR</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Mobile 1</label>
+                        <input type="text" id="regEmpMobile1" placeholder="+123456789"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Mobile 2</label>
+                        <input type="text" id="regEmpMobile2" placeholder="+123456789"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Information -->
+            <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
+                <h4 class="font-bold text-black text-xs uppercase tracking-wider text-zinc-500">Address Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="md:col-span-2">
+                        <label class="block font-semibold text-zinc-700 mb-1">Address Line 1 <span class="text-red-500">*</span></label>
+                        <input type="text" id="regEmpAddressLine1" required placeholder="Street address"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Address Line 2</label>
+                        <input type="text" id="regEmpAddressLine2" placeholder="Suite, unit, etc."
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Address Line 3</label>
+                        <input type="text" id="regEmpAddressLine3" placeholder="Landmark"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">City <span class="text-red-500">*</span></label>
+                        <input type="text" id="regEmpCity" required placeholder="City name"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">Postal Code <span class="text-red-500">*</span></label>
+                        <input type="text" id="regEmpPostalCode" required placeholder="Postal Code"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">District</label>
+                        <input type="text" id="regEmpDistrict" placeholder="District"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-zinc-700 mb-1">State / Province</label>
+                        <input type="text" id="regEmpStateProvince" placeholder="State/Province"
+                               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-semibold text-zinc-700 mb-1">Country <span class="text-red-500">*</span></label>
+                        <select id="regEmpCountryId" required
+                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
+                            <option value="">-- Choose Country --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-zinc-50 border-t border-zinc-200 flex items-center justify-end gap-3 shrink-0">
+            <button type="button" id="cancelRegisterEmployeeBtn"
+                    class="px-4 py-2 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-200 transition-colors">
+                Cancel
+            </button>
+            <button type="button" id="submitRegisterEmployeeBtn"
+                    class="bg-black hover:bg-zinc-800 text-white font-bold text-xs px-5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2">
+                <i id="regEmpBtnIcon" class="fa-solid fa-user-check text-xs"></i>
+                <i id="regEmpBtnSpinner" class="fa-solid fa-spinner spinner text-xs hidden"></i>
+                Register Employee
+            </button>
+        </div>
+
+    </div>
+</div>
+
 
 <script src="assets/js/admin.js"></script>
 </body>

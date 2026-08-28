@@ -10,7 +10,8 @@ import jakarta.inject.Inject;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-@Stateless
+@Singleton
+@Startup
 public class LogisticsTimerManager {
     private static final Logger LOGGER = Logger.getLogger(LogisticsTimerManager.class.getName());
     private static final String TASK_VENDOR_PERFORMANCE = "VENDOR_PERFORMANCE";
@@ -52,9 +53,10 @@ public class LogisticsTimerManager {
     public void createVendorPerformanceTimer() {
         ScheduleExpression schedule = new ScheduleExpression();
 
-        schedule.hour("*");
-        schedule.minute("*/10");
+        schedule.hour("23");
+        schedule.minute("59");
         schedule.second("0");
+        schedule.timezone("Asia/Colombo");
 
         createTimer(TASK_VENDOR_PERFORMANCE, schedule);
     }
@@ -62,10 +64,18 @@ public class LogisticsTimerManager {
     public void createRouteOptimizationTimer() {
         ScheduleExpression schedule = new ScheduleExpression();
         schedule.hour("*");
-        schedule.minute("*/10");
+        schedule.minute("*/15");
         schedule.second("0");
 
         createTimer(TASK_ROUTE_OPTIMIZATION, schedule);
+    }
+
+    private void createTimer(String taskName, ScheduleExpression schedule) {
+        TimerConfig config = new TimerConfig();
+        config.setInfo(taskName);
+        config.setPersistent(true);
+
+        timerService.createCalendarTimer(schedule, config);
     }
 
     private boolean timerExists(String taskName) {
@@ -75,13 +85,5 @@ public class LogisticsTimerManager {
             }
         }
         return false;
-    }
-
-    private void createTimer(String taskName, ScheduleExpression schedule) {
-        TimerConfig config = new TimerConfig();
-        config.setInfo(taskName);
-        config.setPersistent(true);
-
-        timerService.createCalendarTimer(schedule, config);
     }
 }

@@ -1,7 +1,9 @@
 package com.globaltrade.logistics.ejb.timer;
 
 import com.globaltrade.logistics.core.dto.shipment.ShipmentMonitorRecord;
+import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
+import com.globaltrade.logistics.core.service.AuditLogService;
 import com.globaltrade.logistics.core.service.ShipmentService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -17,9 +19,12 @@ import java.util.logging.Logger;
 @Startup
 public class ShipmentMonitoringTimer {
     private static final Logger LOGGER = Logger.getLogger(ShipmentMonitoringTimer.class.getName());
+    private static final String ENTITY_TYPE = "Shipment";
 
     @Inject
     private ShipmentService shipmentService;
+    @EJB
+    private AuditLogService auditLogService;
 
     @Resource
     private TimerService timerService;
@@ -47,9 +52,26 @@ public class ShipmentMonitoringTimer {
             LocalDateTime now = LocalDateTime.now();
 
             for (ShipmentMonitorRecord shipment : activeShipments) {
-                if (shipment.estimatedDeliveryDate() != null &&
-                        now.isAfter(shipment.estimatedDeliveryDate()) &&
-                        shipment.status() != ShipmentStatus.DELIVERED) {
+                if (shipment.estimatedDeliveryDate() != null && now.isAfter(shipment.estimatedDeliveryDate()) &&
+                        shipment.status() != ShipmentStatus.DELIVERED &&
+                        shipment.status() != ShipmentStatus.CANCELLED) {
+
+                    boolean isExist = auditLogService.existsByEntityAndAction(ENTITY_TYPE,
+                            shipment.id().toString(),
+                            AuditAction.SHIPMENT_OVERDUE);
+
+                    if(!isExist) {
+                        auditLogService.log(
+                                null,
+                                AuditAction.SHIPMENT_OVERDUE,
+                                ENTITY_TYPE,
+                                shipment.id().toString(),
+                                "Shipment " + shipment.shipmentNumber()
+                                        + " is overdue. Expected delivery: "
+                                        + shipment.estimatedDeliveryDate()
+                        );
+                    }
+
 
                     LOGGER.warning("OVERDUE SHIPMENT: " + shipment.shipmentNumber() +
                             ", Order=" + shipment.orderNumber() + ", Status=" + shipment.status());

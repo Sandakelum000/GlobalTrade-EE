@@ -8,15 +8,155 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_BASE_URL = getContextPath();
 
+    // --- AUTHENTICATED FETCH & TOKEN REFRESH ENGINE ---
+    let isRefreshing = false;
+    let refreshSubscribers = [];
+
+    function clearSession() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('roles');
+        window.location.href = 'signin.html';
+    }
+
+    function onRefreshed(newToken) {
+        refreshSubscribers.forEach(cb => cb(newToken));
+        refreshSubscribers = [];
+    }
+
+    function addRefreshSubscriber(cb) {
+        refreshSubscribers.push(cb);
+    }
+
+    async function refreshAccessToken() {
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        if (!refreshToken) {
+            clearSession();
+            throw new Error('No refresh token available');
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refreshToken: refreshToken })
+            });
+
+            if (!response.ok) {
+                clearSession();
+                throw new Error('Refresh token invalid or expired');
+            }
+
+            const data = await response.json();
+
+            const newAccessToken = data.access || data.accessToken;
+            const newRefreshToken = data.refresh || data.refreshToken || refreshToken;
+
+            localStorage.setItem('access_token', newAccessToken);
+            localStorage.setItem('refresh_token', newRefreshToken);
+            if (data.username) localStorage.setItem('username', data.username);
+            if (data.roles) localStorage.setItem('roles', JSON.stringify(data.roles));
+
+            return newAccessToken;
+        } catch (err) {
+            clearSession();
+            throw err;
+        }
+    }
+
+    async function authenticatedFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        let accessToken = localStorage.getItem('access_token');
+
+        if (!accessToken) {
+            clearSession();
+            return new Response(JSON.stringify({ message: "Unauthenticated" }), { status: 401 });
+        }
+
+        options.headers['Authorization'] = `Bearer ${accessToken}`;
+        if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
+            options.headers['Content-Type'] = 'application/json';
+        }
+
+        let response = await fetch(url, options);
+
+        if (response.status === 401) {
+            if (!isRefreshing) {
+                isRefreshing = true;
+
+                try {
+                    const newAccessToken = await refreshAccessToken();
+                    isRefreshing = false;
+                    onRefreshed(newAccessToken);
+
+                    options.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                    return await fetch(url, options);
+                } catch (err) {
+                    isRefreshing = false;
+                    return response;
+                }
+            } else {
+                return new Promise((resolve) => {
+                    addRefreshSubscriber((newToken) => {
+                        options.headers['Authorization'] = `Bearer ${newToken}`;
+                        resolve(fetch(url, options));
+                    });
+                });
+            }
+        }
+
+        if (response.status === 403) {
+            showAlert("Access forbidden: You do not have permission to execute this request.", "error");
+        }
+
+        return response;
+    }
+
+    // Export globally for cross-script utilization
+    window.authenticatedFetch = authenticatedFetch;
+
     // Helper to display ValidationErrorResponse fields
     function showValidationErrorAlert(errorData, alertElem, msgElem, detailElem, fieldElem = null, statusElem = null) {
         if (!alertElem) return;
 
-        const message = errorData.message || 'Validation Error';
-        const field = errorData.field || '';
-        const detail = errorData.detail || errorData.message || 'State transition rejected by validation rules.';
-        const status = errorData.status || '';
+        let message = 'Validation Error';
+        let detail = 'State transition rejected by validation rules.';
+        let field = '';
+        let status = '';
 
+        // 1. Handle Array of Errors directly: [{ field, message }, ...]
+        if (Array.isArray(errorData)) {
+            message = 'Multiple Validation Errors';
+            detail = errorData.map(err => {
+                const f = err.field ? `[${err.field}]: ` : '';
+                return `${f}${err.message || err.detail || 'Invalid input'}`;
+            }).join(' | ');
+            status = errorData[0]?.status || '';
+
+            // 2. Handle Object containing an errors array: { message: "...", errors: [...] }
+        } else if (errorData && Array.isArray(errorData.errors)) {
+            message = errorData.message || 'Validation Failure';
+            detail = errorData.errors.map(err => {
+                const f = err.field ? `[${err.field}]: ` : '';
+                return `${f}${err.message || err.detail || 'Invalid input'}`;
+            }).join(' | ');
+            status = errorData.status || '';
+
+            // 3. Handle standard single error object
+        } else if (errorData && typeof errorData === 'object') {
+            message = errorData.message || 'Validation Error';
+            detail = errorData.detail || errorData.message || 'State transition rejected by validation rules.';
+            field = errorData.field || '';
+            status = errorData.status || '';
+        } else if (typeof errorData === 'string') {
+            detail = errorData;
+        }
+
+        // Populate UI elements
         if (msgElem) msgElem.textContent = message;
         if (detailElem) detailElem.textContent = detail;
 
@@ -95,6 +235,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalVendorCloseFooterBtn = document.getElementById('modalVendorCloseFooterBtn');
     const modalVendorLoader = document.getElementById('modalVendorLoader');
     const modalVendorContent = document.getElementById('modalVendorContent');
+
+    // Customer Modal Elements
+    const customerDetailsModal = document.getElementById('customerDetailsModal');
+    const closeCustomerModalBtn = document.getElementById('closeCustomerModalBtn');
+    const modalCustomerCloseFooterBtn = document.getElementById('modalCustomerCloseFooterBtn');
+    const modalCustomerLoader = document.getElementById('modalCustomerLoader');
+    const modalCustomerContent = document.getElementById('modalCustomerContent');
+
+    // Employee Modal Elements
+    const employeeDetailsModal = document.getElementById('employeeDetailsModal');
+    const closeEmployeeModalBtn = document.getElementById('closeEmployeeModalBtn');
+    const modalEmployeeCloseFooterBtn = document.getElementById('modalEmployeeCloseFooterBtn');
+    const modalEmployeeLoader = document.getElementById('modalEmployeeLoader');
+    const modalEmployeeContent = document.getElementById('modalEmployeeContent');
+
+    // Register Employee Modal Elements
+    const registerEmployeeModal = document.getElementById('registerEmployeeModal');
+    const openRegisterEmployeeModalBtn = document.getElementById('openRegisterEmployeeModalBtn');
+    const closeRegisterEmployeeModalBtn = document.getElementById('closeRegisterEmployeeModalBtn');
+    const cancelRegisterEmployeeBtn = document.getElementById('cancelRegisterEmployeeBtn');
+    const submitRegisterEmployeeBtn = document.getElementById('submitRegisterEmployeeBtn');
+    const registerEmployeeForm = document.getElementById('registerEmployeeForm');
+    const regEmpCountryId = document.getElementById('regEmpCountryId');
+    const regEmpBtnSpinner = document.getElementById('regEmpBtnSpinner');
+    const regEmpBtnIcon = document.getElementById('regEmpBtnIcon');
+    const registerEmployeeModalAlert = document.getElementById('registerEmployeeModalAlert');
+    const registerEmployeeAlertMessage = document.getElementById('registerEmployeeAlertMessage');
+    const registerEmployeeAlertDetail = document.getElementById('registerEmployeeAlertDetail');
+    const registerEmployeeAlertStatus = document.getElementById('registerEmployeeAlertStatus');
 
     // Vendor Status Activation/Deactivation Modal Elements
     const vendorStatusModal = document.getElementById('vendorStatusModal');
@@ -182,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let orderToCancelId = null;
     let shipmentToShipId = null;
     let shipmentToUpdateTrackingId = null;
-    let vendorToUpdateAction = null; // { id: UUID, targetStatus: 'ACTIVE' | 'INACTIVE' }
+    let vendorToUpdateAction = null;
 
     // Collapsible Sidebar Controller
     let isCollapsed = false;
@@ -229,6 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'DAMAGED':
             case 'EXPIRED':
             case 'INACTIVE':
+            case 'TERMINATED':
+            case 'BLOCKED':
             case 'BLACKLISTED':
                 return `<span class="px-2.5 py-1 bg-red-100 text-red-800 border border-red-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-xmark text-[8px] text-red-600"></i> ${displayLabel}</span>`;
             case 'PENDING':
@@ -237,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'QUARANTINED':
             case 'DRAFT':
             case 'SUSPENDED':
+            case 'UNDER_REVIEW':
                 return `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-[8px] text-amber-600"></i> ${displayLabel}</span>`;
             case 'PROCESSING':
             case 'SHIPPED':
@@ -246,6 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
             default:
                 return `<span class="px-2.5 py-1 bg-zinc-100 text-zinc-800 border border-zinc-300 rounded text-xs font-semibold inline-flex items-center gap-1.5">${displayLabel}</span>`;
         }
+    }
+
+    function getKycBadgeHtml(isVerified) {
+        if (isVerified) {
+            return `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-shield-check text-[10px] text-emerald-600"></i> Verified</span>`;
+        }
+        return `<span class="px-2.5 py-1 bg-zinc-100 text-zinc-700 border border-zinc-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-[10px] text-zinc-400"></i> Unverified</span>`;
     }
 
     function getStockBadge(item) {
@@ -286,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!token) {
             window.location.href = 'signin.html';
-            return null;
+            return false;
         }
 
         let roles = [];
@@ -301,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!isAdmin) {
             window.location.href = 'dashboard.html';
-            return null;
+            return false;
         }
 
         if (username) {
@@ -310,10 +489,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (roleBadge) roleBadge.textContent = 'Admin';
-        return token;
+        return true;
     }
 
-    const authToken = checkAdminSession();
+    if (!checkAdminSession()) return;
 
     // Order Details Modal Controllers
     function openOrderModal() {
@@ -351,22 +530,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Vendor Inspection Fetcher
     async function fetchAndDisplayVendorDetails(vendorId) {
-        if (!vendorId || vendorId === 'undefined' || !authToken) {
-            console.error('Invalid vendorId passed to details loader:', vendorId);
-            return;
-        }
+        if (!vendorId || vendorId === 'undefined') return;
 
         openVendorModal();
         if (modalVendorLoader) modalVendorLoader.classList.remove('hidden');
         if (modalVendorContent) modalVendorContent.classList.add('hidden');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/vendors/${vendorId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/vendors/${vendorId}`, {
+                method: 'GET'
             });
 
             if (!response.ok) throw new Error(`HTTP Error (${response.status})`);
@@ -375,7 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderVendorDetailsModal(vendorDetails);
 
         } catch (err) {
-            console.error('Failed to fetch vendor details:', err);
             showAlert(`Unable to fetch vendor details: ${err.message}`, 'error');
             closeVendorModal();
         } finally {
@@ -384,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Render Vendors Table with Click Events & ID Resolution
+    // Render Vendors Table
     function renderVendorsTable(vendors) {
         const tbody = document.getElementById('vendorsTableBody');
         if (!tbody) return;
@@ -436,13 +607,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             `;
 
-            // Row click trigger
             tr.addEventListener('click', (e) => {
                 if (e.target.closest('.action-cells')) return;
                 if (vId) fetchAndDisplayVendorDetails(vId);
             });
 
-            // View button click trigger
             const viewBtn = tr.querySelector('.btn-view-vendor');
             if (viewBtn) {
                 viewBtn.addEventListener('click', (e) => {
@@ -451,7 +620,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Activate button trigger
             const activateBtn = tr.querySelector('.btn-activate-vendor');
             if (activateBtn && !isActive) {
                 activateBtn.addEventListener('click', (e) => {
@@ -460,7 +628,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Deactivate button trigger
             const deactivateBtn = tr.querySelector('.btn-deactivate-vendor');
             if (deactivateBtn && !isInactive) {
                 deactivateBtn.addEventListener('click', (e) => {
@@ -502,7 +669,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modalVendorLastGRNDate').textContent = lastGrnStr;
     }
 
-    // In-place dynamic DOM update for modified vendor row
     function updateVendorTableRow(updatedVendor) {
         const vId = updatedVendor.id || updatedVendor.vendorId;
         const row = document.querySelector(`tr[data-vendor-id="${vId}"]`);
@@ -557,7 +723,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Vendor Status Activation/Deactivation Modal Controller
     function openVendorStatusModal(vendor, targetStatus) {
         const vId = vendor.vendorId || vendor.id;
         if (!vId) return;
@@ -615,7 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (confirmVendorStatusBtn) {
         confirmVendorStatusBtn.addEventListener('click', async () => {
-            if (!vendorToUpdateAction || !vendorToUpdateAction.id || !authToken) return;
+            if (!vendorToUpdateAction || !vendorToUpdateAction.id) return;
 
             const { id: vendorId, targetStatus } = vendorToUpdateAction;
 
@@ -629,12 +794,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `${API_BASE_URL}/vendors/deactivate/${vendorId}`;
 
             try {
-                const response = await fetch(endpointPath, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await authenticatedFetch(endpointPath, {
+                    method: 'PUT'
                 });
 
                 if (response.ok) {
@@ -642,10 +803,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     closeVendorStatusModal();
                     showAlert(`Vendor status updated to ${updatedVendor.status}.`, 'info');
 
-                    // 1. In-place DOM update for table row without re-fetching table data
                     updateVendorTableRow(updatedVendor);
-
-                    // 2. Refresh dashboard metrics
                     fetchAdminDashboard();
                 } else {
                     const errorData = await response.json();
@@ -690,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAdminVendors() {
         const tbody = document.getElementById('vendorsTableBody');
-        if (!tbody || !authToken) return;
+        if (!tbody) return;
 
         tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading vendor directory...</td></tr>`;
 
@@ -706,19 +864,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (vendorQueryState.companyId) queryParams.append('companyId', vendorQueryState.companyId);
             if (vendorQueryState.status) queryParams.append('status', vendorQueryState.status);
 
-            const response = await fetch(`${API_BASE_URL}/vendors?${queryParams.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/vendors?${queryParams.toString()}`, {
+                method: 'GET'
             });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.clear();
-                window.location.href = 'signin.html';
-                return;
-            }
 
             if (!response.ok) throw new Error(`Failed to load vendors (${response.status})`);
 
@@ -841,14 +989,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Populate Vendor Dropdowns
     async function loadVendorDropdownOptions() {
-        if (!authToken) return;
-
         try {
-            const companyResponse = await fetch(`${API_BASE_URL}/grn/companies`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const companyResponse = await authenticatedFetch(`${API_BASE_URL}/grn/companies`);
             if (companyResponse.ok) {
                 const companies = await companyResponse.json();
                 const companySelect = document.getElementById('vendorCompanyFilter');
@@ -861,6 +1004,717 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error('Failed to load vendor company dropdown options:', err);
+        }
+    }
+
+    // --- CUSTOMER MODULE ---
+    let customerQueryState = {
+        search: '',
+        companyId: '',
+        customerType: '',
+        status: '',
+        kycVerified: null,
+        sortBy: 'customerNumber',
+        direction: 'ASC',
+        page: 0,
+        size: 20
+    };
+
+    let customerSearchDebounceTimer = null;
+
+    function openCustomerModal() {
+        if (customerDetailsModal) customerDetailsModal.classList.remove('hidden');
+    }
+
+    function closeCustomerModal() {
+        if (customerDetailsModal) customerDetailsModal.classList.add('hidden');
+    }
+
+    if (closeCustomerModalBtn) closeCustomerModalBtn.addEventListener('click', closeCustomerModal);
+    if (modalCustomerCloseFooterBtn) modalCustomerCloseFooterBtn.addEventListener('click', closeCustomerModal);
+    if (customerDetailsModal) {
+        customerDetailsModal.addEventListener('click', (e) => {
+            if (e.target === customerDetailsModal) closeCustomerModal();
+        });
+    }
+
+    async function loadCustomerDropdownOptions() {
+        try {
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/customers/companies`);
+            if (response.ok) {
+                const companies = await response.json();
+                const companySelect = document.getElementById('customerCompanyFilter');
+                if (companySelect) {
+                    companySelect.innerHTML = `<option value="">All Companies</option>`;
+                    companies.forEach(c => {
+                        companySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load customer company dropdowns:', err);
+        }
+    }
+
+    async function fetchAndDisplayCustomerDetails(customerId) {
+        if (!customerId) return;
+
+        openCustomerModal();
+        if (modalCustomerLoader) modalCustomerLoader.classList.remove('hidden');
+        if (modalCustomerContent) modalCustomerContent.classList.add('hidden');
+
+        try {
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/customers/${customerId}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) throw new Error(`HTTP Error (${response.status})`);
+
+            const details = await response.json();
+            renderCustomerDetailsModal(details);
+
+        } catch (err) {
+            showAlert(`Unable to fetch customer details: ${err.message}`, 'error');
+            closeCustomerModal();
+        } finally {
+            if (modalCustomerLoader) modalCustomerLoader.classList.add('hidden');
+            if (modalCustomerContent) modalCustomerContent.classList.remove('hidden');
+        }
+    }
+
+    function renderCustomerDetailsModal(data) {
+        document.getElementById('modalCustomerNumber').textContent = `Customer ${data.customerNumber || 'N/A'}`;
+        document.getElementById('modalCustomerStatusBadge').innerHTML = getStatusBadgeHtml(data.status);
+        document.getElementById('modalCustomerKycBadge').innerHTML = getKycBadgeHtml(data.kycVerified);
+
+        const joinedStr = data.joinedAt ? new Date(data.joinedAt).toLocaleString() : 'N/A';
+        document.getElementById('modalCustomerMeta').textContent = `Joined: ${joinedStr}`;
+
+        document.getElementById('modalCustTotalOrders').textContent = (data.totalOrders || 0).toLocaleString();
+
+        const totalValue = data.totalOrderValue != null ? parseFloat(data.totalOrderValue) : 0;
+        document.getElementById('modalCustTotalValue').textContent = `$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+        const lastOrderStr = data.lastOrderDate ? new Date(data.lastOrderDate).toLocaleString() : 'No Orders Executed';
+        document.getElementById('modalCustLastOrderDate').textContent = lastOrderStr;
+
+        document.getElementById('modalCustomerIdBadge').textContent = data.customerId ? data.customerId.substring(0, 8) : 'N/A';
+        document.getElementById('modalCustFullName').textContent = `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'N/A';
+        document.getElementById('modalCustEmailAddr').textContent = data.email || 'N/A';
+        document.getElementById('modalCustPhone1').textContent = data.mobile1 || 'N/A';
+        document.getElementById('modalCustPhone2').textContent = data.mobile2 || 'N/A';
+
+        document.getElementById('modalCustCompanyName').textContent = data.companyName || 'N/A';
+        document.getElementById('modalCustCompanyId').textContent = data.companyId || 'N/A';
+        document.getElementById('modalCustTypeTag').textContent = data.customerType || 'N/A';
+    }
+
+    async function fetchAdminCustomers() {
+        const tbody = document.getElementById('customersTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading customer records...</td></tr>`;
+
+        try {
+            const queryParams = new URLSearchParams({
+                sortBy: customerQueryState.sortBy,
+                direction: customerQueryState.direction,
+                page: customerQueryState.page,
+                size: customerQueryState.size
+            });
+
+            if (customerQueryState.search.trim()) queryParams.append('search', customerQueryState.search.trim());
+            if (customerQueryState.companyId) queryParams.append('companyId', customerQueryState.companyId);
+            if (customerQueryState.customerType) queryParams.append('customerType', customerQueryState.customerType);
+            if (customerQueryState.status) queryParams.append('status', customerQueryState.status);
+            if (customerQueryState.kycVerified !== null) queryParams.append('kycVerified', customerQueryState.kycVerified);
+
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/customers?${queryParams.toString()}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) throw new Error(`Failed to load customers (${response.status})`);
+
+            const data = await response.json();
+
+            renderCustomersTable(data.content || []);
+            updateCustomerPaginationControls(data);
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-red-600">Failed to load customer list. ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderCustomersTable(customers) {
+        const tbody = document.getElementById('customersTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (customers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-zinc-400">No matching customer records found.</td></tr>`;
+            return;
+        }
+
+        customers.forEach(cust => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-zinc-50/80 cursor-pointer transition-colors';
+            const custId = cust.customerId || cust.id;
+            tr.setAttribute('data-customer-id', custId);
+
+            const fullName = `${cust.firstName || ''} ${cust.lastName || ''}`.trim() || 'N/A';
+
+            tr.innerHTML = `
+                <td class="py-3.5 px-5 font-bold text-black">${cust.customerNumber || 'N/A'}</td>
+                <td class="py-3.5 px-5 font-bold text-zinc-800">${fullName}</td>
+                <td class="py-3.5 px-5 text-zinc-600">${cust.companyName || 'N/A'}</td>
+                <td class="py-3.5 px-5 text-zinc-600">${cust.email || 'N/A'}</td>
+                <td class="py-3.5 px-5 text-zinc-600">${cust.mobile1 || 'N/A'}</td>
+                <td class="py-3.5 px-5 font-semibold text-indigo-700">${cust.customerType || 'N/A'}</td>
+                <td class="py-3.5 px-5">${getStatusBadgeHtml(cust.status)}</td>
+                <td class="py-3.5 px-5 text-center">${getKycBadgeHtml(cust.kycVerified)}</td>
+                <td class="py-3.5 px-5 text-center action-cells">
+                    <button class="btn-view-customer p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors" title="View Customer Details">
+                        <i class="fa-solid fa-eye text-xs pointer-events-none"></i>
+                    </button>
+                </td>
+            `;
+
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('.action-cells')) return;
+                if (custId) fetchAndDisplayCustomerDetails(custId);
+            });
+
+            const viewBtn = tr.querySelector('.btn-view-customer');
+            if (viewBtn) {
+                viewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (custId) fetchAndDisplayCustomerDetails(custId);
+                });
+            }
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateCustomerPaginationControls(pageData) {
+        const totalElements = pageData.totalElements || 0;
+        const totalPages = pageData.totalPages || 0;
+        const currentPage = pageData.page || 0;
+        const pageSize = pageData.size || 20;
+
+        const countElem = document.getElementById('customersTotalCount');
+        const infoElem = document.getElementById('customersPageInfo');
+        const textElem = document.getElementById('customersPaginationText');
+        const prevBtn = document.getElementById('customerPrevPageBtn');
+        const nextBtn = document.getElementById('customerNextPageBtn');
+
+        if (countElem) countElem.textContent = totalElements.toLocaleString();
+        if (infoElem) infoElem.textContent = `${totalPages > 0 ? currentPage + 1 : 0} / ${totalPages}`;
+
+        const startItem = totalElements === 0 ? 0 : currentPage * pageSize + 1;
+        const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
+        if (textElem) textElem.textContent = `Showing ${startItem} to ${endItem} of ${totalElements} entries`;
+
+        if (prevBtn) prevBtn.disabled = currentPage <= 0;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1 || totalPages === 0;
+    }
+
+    function initCustomerTableEvents() {
+        const searchInput = document.getElementById('customerSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(customerSearchDebounceTimer);
+                customerSearchDebounceTimer = setTimeout(() => {
+                    customerQueryState.search = e.target.value;
+                    customerQueryState.page = 0;
+                    fetchAdminCustomers();
+                }, 300);
+            });
+        }
+
+        const companyFilter = document.getElementById('customerCompanyFilter');
+        if (companyFilter) {
+            companyFilter.addEventListener('change', (e) => {
+                customerQueryState.companyId = e.target.value;
+                customerQueryState.page = 0;
+                fetchAdminCustomers();
+            });
+        }
+
+        const typeFilter = document.getElementById('customerTypeFilter');
+        if (typeFilter) {
+            typeFilter.addEventListener('change', (e) => {
+                customerQueryState.customerType = e.target.value;
+                customerQueryState.page = 0;
+                fetchAdminCustomers();
+            });
+        }
+
+        const statusFilter = document.getElementById('customerStatusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', (e) => {
+                customerQueryState.status = e.target.value;
+                customerQueryState.page = 0;
+                fetchAdminCustomers();
+            });
+        }
+
+        const kycFilter = document.getElementById('customerKycFilter');
+        if (kycFilter) {
+            kycFilter.addEventListener('change', (e) => {
+                const val = e.target.value;
+                customerQueryState.kycVerified = val === '' ? null : (val === 'true');
+                customerQueryState.page = 0;
+                fetchAdminCustomers();
+            });
+        }
+
+        const pageSizeSelect = document.getElementById('customerPageSize');
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', (e) => {
+                customerQueryState.size = parseInt(e.target.value, 10);
+                customerQueryState.page = 0;
+                fetchAdminCustomers();
+            });
+        }
+
+        const sortableHeaders = document.querySelectorAll('.customer-sortable-header');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const field = header.getAttribute('data-sort');
+                if (customerQueryState.sortBy === field) {
+                    customerQueryState.direction = customerQueryState.direction === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    customerQueryState.sortBy = field;
+                    customerQueryState.direction = 'ASC';
+                }
+
+                sortableHeaders.forEach(h => {
+                    const icon = h.querySelector('i');
+                    if (icon) icon.className = 'fa-solid fa-sort text-zinc-400 ml-1';
+                });
+                const currentIcon = header.querySelector('i');
+                if (currentIcon) {
+                    currentIcon.className = customerQueryState.direction === 'ASC'
+                        ? 'fa-solid fa-sort-up text-black ml-1'
+                        : 'fa-solid fa-sort-down text-black ml-1';
+                }
+
+                fetchAdminCustomers();
+            });
+        });
+
+        const prevBtn = document.getElementById('customerPrevPageBtn');
+        const nextBtn = document.getElementById('customerNextPageBtn');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (customerQueryState.page > 0) {
+                    customerQueryState.page--;
+                    fetchAdminCustomers();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                customerQueryState.page++;
+                fetchAdminCustomers();
+            });
+        }
+    }
+
+    // --- EMPLOYEE MODULE ---
+    let employeeQueryState = {
+        search: '',
+        department: '',
+        status: '',
+        sortBy: 'employeeNumber',
+        direction: 'ASC',
+        page: 0,
+        size: 20
+    };
+
+    let employeeSearchDebounceTimer = null;
+
+    function openEmployeeModal() {
+        if (employeeDetailsModal) employeeDetailsModal.classList.remove('hidden');
+    }
+
+    function closeEmployeeModal() {
+        if (employeeDetailsModal) employeeDetailsModal.classList.add('hidden');
+    }
+
+    if (closeEmployeeModalBtn) closeEmployeeModalBtn.addEventListener('click', closeEmployeeModal);
+    if (modalEmployeeCloseFooterBtn) modalEmployeeCloseFooterBtn.addEventListener('click', closeEmployeeModal);
+    if (employeeDetailsModal) {
+        employeeDetailsModal.addEventListener('click', (e) => {
+            if (e.target === employeeDetailsModal) closeEmployeeModal();
+        });
+    }
+
+    async function loadRegisterCountriesOptions() {
+        if (!regEmpCountryId) return;
+        try {
+            const response = await authenticatedFetch(`${API_BASE_URL}/data/countries`, {
+                method: 'GET'
+            });
+            if (response.ok) {
+                const countries = await response.json();
+                regEmpCountryId.innerHTML = `<option value="">-- Choose Country --</option>`;
+                countries.forEach(c => {
+                    const cId = c.id || c.countryId;
+                    regEmpCountryId.innerHTML += `<option value="${cId}">${c.name || c.countryName}</option>`;
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load countries for employee registration:', err);
+        }
+    }
+
+    async function openRegisterEmployeeModal() {
+        if (registerEmployeeForm) registerEmployeeForm.reset();
+        if (registerEmployeeModalAlert) registerEmployeeModalAlert.classList.add('hidden');
+
+        if (registerEmployeeModal) registerEmployeeModal.classList.remove('hidden');
+        await loadRegisterCountriesOptions();
+    }
+
+    function closeRegisterEmployeeModal() {
+        if (registerEmployeeModal) registerEmployeeModal.classList.add('hidden');
+    }
+
+    if (openRegisterEmployeeModalBtn) openRegisterEmployeeModalBtn.addEventListener('click', openRegisterEmployeeModal);
+    if (closeRegisterEmployeeModalBtn) closeRegisterEmployeeModalBtn.addEventListener('click', closeRegisterEmployeeModal);
+    if (cancelRegisterEmployeeBtn) cancelRegisterEmployeeBtn.addEventListener('click', closeRegisterEmployeeModal);
+
+    if (registerEmployeeModal) {
+        registerEmployeeModal.addEventListener('click', (e) => {
+            if (e.target === registerEmployeeModal) closeRegisterEmployeeModal();
+        });
+    }
+
+    if (submitRegisterEmployeeBtn) {
+        submitRegisterEmployeeBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                firstName: document.getElementById('regEmpFirstName').value.trim(),
+                lastName: document.getElementById('regEmpLastName').value.trim(),
+                email: document.getElementById('regEmpEmail').value.trim(),
+                mobile1: document.getElementById('regEmpMobile1').value.trim() || null,
+                mobile2: document.getElementById('regEmpMobile2').value.trim() || null,
+                department: document.getElementById('regEmpDepartment').value || null,
+                username: document.getElementById('regEmpUsername').value.trim(),
+                password: document.getElementById('regEmpPassword').value,
+                countryId: document.getElementById('regEmpCountryId').value || null,
+                addressLine1: document.getElementById('regEmpAddressLine1').value.trim(),
+                addressLine2: document.getElementById('regEmpAddressLine2').value.trim() || null,
+                addressLine3: document.getElementById('regEmpAddressLine3').value.trim() || null,
+                city: document.getElementById('regEmpCity').value.trim(),
+                district: document.getElementById('regEmpDistrict').value.trim() || null,
+                stateProvince: document.getElementById('regEmpStateProvince').value.trim() || null,
+                postalCode: document.getElementById('regEmpPostalCode').value.trim(),
+                roleType: document.getElementById('regEmpRoleType').value || null
+            };
+
+            submitRegisterEmployeeBtn.disabled = true;
+            if (regEmpBtnSpinner) regEmpBtnSpinner.classList.remove('hidden');
+            if (regEmpBtnIcon) regEmpBtnIcon.classList.add('hidden');
+            if (registerEmployeeModalAlert) registerEmployeeModalAlert.classList.add('hidden');
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/employee/register`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    closeRegisterEmployeeModal();
+                    showAlert("Employee registered successfully.", "info");
+                    fetchAdminEmployees();
+                } else {
+                    const errorData = await response.json();
+                    showValidationErrorAlert(
+                        errorData,
+                        registerEmployeeModalAlert,
+                        registerEmployeeAlertMessage,
+                        registerEmployeeAlertDetail,
+                        null,
+                        registerEmployeeAlertStatus
+                    );
+                }
+            } catch (err) {
+                showValidationErrorAlert(
+                    { message: "Network error encountered", detail: err.message },
+                    registerEmployeeModalAlert,
+                    registerEmployeeAlertMessage,
+                    registerEmployeeAlertDetail,
+                    null,
+                    registerEmployeeAlertStatus
+                );
+            } finally {
+                submitRegisterEmployeeBtn.disabled = false;
+                if (regEmpBtnSpinner) regEmpBtnSpinner.classList.add('hidden');
+                if (regEmpBtnIcon) regEmpBtnIcon.classList.remove('hidden');
+            }
+        });
+    }
+
+    async function fetchAndDisplayEmployeeDetails(employeeId) {
+        if (!employeeId) return;
+
+        openEmployeeModal();
+        if (modalEmployeeLoader) modalEmployeeLoader.classList.remove('hidden');
+        if (modalEmployeeContent) modalEmployeeContent.classList.add('hidden');
+
+        try {
+            const response = await authenticatedFetch(`${API_BASE_URL}/employee/${employeeId}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || `HTTP Error (${response.status})`);
+            }
+
+            const employeeDetails = await response.json();
+            renderEmployeeDetailsModal(employeeDetails);
+
+        } catch (err) {
+            showAlert(`Unable to fetch employee details: ${err.message}`, 'error');
+            closeEmployeeModal();
+        } finally {
+            if (modalEmployeeLoader) modalEmployeeLoader.classList.add('hidden');
+            if (modalEmployeeContent) modalEmployeeContent.classList.remove('hidden');
+        }
+    }
+
+    function renderEmployeeDetailsModal(data) {
+        document.getElementById('modalEmployeeNumber').textContent = `Employee ${data.employeeNumber || 'N/A'}`;
+        document.getElementById('modalEmployeeStatusBadge').innerHTML = getStatusBadgeHtml(data.status);
+
+        const createdStr = data.createdAt ? new Date(data.createdAt).toLocaleString() : 'N/A';
+        document.getElementById('modalEmployeeMeta').textContent = `Created: ${createdStr}`;
+
+        document.getElementById('modalEmployeeIdBadge').textContent = data.employeeId ? data.employeeId.substring(0, 8) : 'N/A';
+        document.getElementById('modalEmpFullName').textContent = `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'N/A';
+        document.getElementById('modalEmpEmail').textContent = data.email || 'N/A';
+        document.getElementById('modalEmpMobile').textContent = data.mobile1 || 'N/A';
+        document.getElementById('modalEmpDepartment').textContent = data.department || 'N/A';
+
+        document.getElementById('modalEmpUsername').textContent = data.username || 'N/A';
+        document.getElementById('modalEmpUserId').textContent = data.userId || 'N/A';
+
+        const rolesContainer = document.getElementById('modalEmpRolesContainer');
+        if (rolesContainer) {
+            rolesContainer.innerHTML = '';
+            const roles = data.roles || [];
+            if (roles.length === 0) {
+                rolesContainer.innerHTML = `<span class="text-zinc-400 italic">No roles assigned</span>`;
+            } else {
+                roles.forEach(role => {
+                    rolesContainer.innerHTML += `<span class="bg-black text-white text-[10px] px-2 py-0.5 rounded font-mono font-bold">${role}</span>`;
+                });
+            }
+        }
+
+        const addrContainer = document.getElementById('modalEmpAddressContainer');
+        if (addrContainer) {
+            addrContainer.innerHTML = formatAddressHtml(data.address);
+        }
+    }
+
+    async function fetchAdminEmployees() {
+        const tbody = document.getElementById('employeesTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading employee records...</td></tr>`;
+
+        try {
+            const queryParams = new URLSearchParams({
+                sortBy: employeeQueryState.sortBy,
+                direction: employeeQueryState.direction,
+                page: employeeQueryState.page,
+                size: employeeQueryState.size
+            });
+
+            if (employeeQueryState.search.trim()) queryParams.append('search', employeeQueryState.search.trim());
+            if (employeeQueryState.department) queryParams.append('department', employeeQueryState.department);
+            if (employeeQueryState.status) queryParams.append('status', employeeQueryState.status);
+
+            const response = await authenticatedFetch(`${API_BASE_URL}/employee?${queryParams.toString()}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) throw new Error(`Failed to load employees (${response.status})`);
+
+            const data = await response.json();
+
+            renderEmployeesTable(data.content || []);
+            updateEmployeePaginationControls(data);
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-red-600">Failed to load employees. ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderEmployeesTable(employees) {
+        const tbody = document.getElementById('employeesTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!employees || employees.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-zinc-400">No matching employee records found.</td></tr>`;
+            return;
+        }
+
+        employees.forEach(emp => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-zinc-50/80 cursor-pointer transition-colors';
+            const empId = emp.employeeId || emp.id;
+            tr.setAttribute('data-employee-id', empId);
+
+            const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'N/A';
+            const rawStatus = (emp.status || '').toUpperCase();
+
+            tr.innerHTML = `
+                <td class="py-3.5 px-5 font-bold text-black">${emp.employeeNumber || 'N/A'}</td>
+                <td class="py-3.5 px-5 font-bold text-zinc-800">${fullName}</td>
+                <td class="py-3.5 px-5 text-zinc-600">${emp.email || 'N/A'}</td>
+                <td class="py-3.5 px-5 text-zinc-600">${emp.mobile || 'N/A'}</td>
+                <td class="py-3.5 px-5 font-semibold text-indigo-700">${emp.roleType || 'N/A'}</td>
+                <td class="py-3.5 px-5">${getStatusBadgeHtml(rawStatus)}</td>
+                <td class="py-3.5 px-5 text-center action-cells">
+                    <button class="btn-view-employee p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors" title="View Employee Details">
+                        <i class="fa-solid fa-eye text-xs pointer-events-none"></i>
+                    </button>
+                </td>
+            `;
+
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('.action-cells')) return;
+                if (empId) fetchAndDisplayEmployeeDetails(empId);
+            });
+
+            const viewBtn = tr.querySelector('.btn-view-employee');
+            if (viewBtn) {
+                viewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (empId) fetchAndDisplayEmployeeDetails(empId);
+                });
+            }
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateEmployeePaginationControls(pageData) {
+        const totalElements = pageData.totalElements || 0;
+        const totalPages = pageData.totalPages || 0;
+        const currentPage = pageData.page || 0;
+        const pageSize = pageData.size || 20;
+
+        const countElem = document.getElementById('employeesTotalCount');
+        const infoElem = document.getElementById('employeesPageInfo');
+        const textElem = document.getElementById('employeesPaginationText');
+        const prevBtn = document.getElementById('employeePrevPageBtn');
+        const nextBtn = document.getElementById('employeeNextPageBtn');
+
+        if (countElem) countElem.textContent = totalElements.toLocaleString();
+        if (infoElem) infoElem.textContent = `${totalPages > 0 ? currentPage + 1 : 0} / ${totalPages}`;
+
+        const startItem = totalElements === 0 ? 0 : currentPage * pageSize + 1;
+        const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
+        if (textElem) textElem.textContent = `Showing ${startItem} to ${endItem} of ${totalElements} entries`;
+
+        if (prevBtn) prevBtn.disabled = currentPage <= 0;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1 || totalPages === 0;
+    }
+
+    function initEmployeeTableEvents() {
+        const searchInput = document.getElementById('employeeSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(employeeSearchDebounceTimer);
+                employeeSearchDebounceTimer = setTimeout(() => {
+                    employeeQueryState.search = e.target.value;
+                    employeeQueryState.page = 0;
+                    fetchAdminEmployees();
+                }, 300);
+            });
+        }
+
+        const deptFilter = document.getElementById('employeeDepartmentFilter');
+        if (deptFilter) {
+            deptFilter.addEventListener('change', (e) => {
+                employeeQueryState.department = e.target.value;
+                employeeQueryState.page = 0;
+                fetchAdminEmployees();
+            });
+        }
+
+        const statusFilter = document.getElementById('employeeStatusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', (e) => {
+                employeeQueryState.status = e.target.value;
+                employeeQueryState.page = 0;
+                fetchAdminEmployees();
+            });
+        }
+
+        const pageSizeSelect = document.getElementById('employeePageSize');
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', (e) => {
+                employeeQueryState.size = parseInt(e.target.value, 10);
+                employeeQueryState.page = 0;
+                fetchAdminEmployees();
+            });
+        }
+
+        const sortableHeaders = document.querySelectorAll('.employee-sortable-header');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const field = header.getAttribute('data-sort');
+                if (employeeQueryState.sortBy === field) {
+                    employeeQueryState.direction = employeeQueryState.direction === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    employeeQueryState.sortBy = field;
+                    employeeQueryState.direction = 'ASC';
+                }
+
+                sortableHeaders.forEach(h => {
+                    const icon = h.querySelector('i');
+                    if (icon) icon.className = 'fa-solid fa-sort text-zinc-400 ml-1';
+                });
+                const currentIcon = header.querySelector('i');
+                if (currentIcon) {
+                    currentIcon.className = employeeQueryState.direction === 'ASC'
+                        ? 'fa-solid fa-sort-up text-black ml-1'
+                        : 'fa-solid fa-sort-down text-black ml-1';
+                }
+
+                fetchAdminEmployees();
+            });
+        });
+
+        const prevBtn = document.getElementById('employeePrevPageBtn');
+        const nextBtn = document.getElementById('employeeNextPageBtn');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (employeeQueryState.page > 0) {
+                    employeeQueryState.page--;
+                    fetchAdminEmployees();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                employeeQueryState.page++;
+                fetchAdminEmployees();
+            });
         }
     }
 
@@ -893,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (confirmCancelOrderBtn) {
         confirmCancelOrderBtn.addEventListener('click', async () => {
-            if (!orderToCancelId || !authToken) return;
+            if (!orderToCancelId) return;
 
             confirmCancelOrderBtn.disabled = true;
             if (cancelBtnSpinner) cancelBtnSpinner.classList.remove('hidden');
@@ -901,12 +1755,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cancelModalAlert) cancelModalAlert.classList.add('hidden');
 
             try {
-                const response = await fetch(`${API_BASE_URL}/orders/cancel/${orderToCancelId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await authenticatedFetch(`${API_BASE_URL}/orders/cancel/${orderToCancelId}`, {
+                    method: 'POST'
                 });
 
                 if (response.ok) {
@@ -971,7 +1821,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (confirmShipShipmentBtn) {
         confirmShipShipmentBtn.addEventListener('click', async () => {
-            if (!shipmentToShipId || !authToken) return;
+            if (!shipmentToShipId) return;
 
             confirmShipShipmentBtn.disabled = true;
             if (shipBtnSpinner) shipBtnSpinner.classList.remove('hidden');
@@ -979,12 +1829,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (shipModalAlert) shipModalAlert.classList.add('hidden');
 
             try {
-                const response = await fetch(`${API_BASE_URL}/shipments/ship/${shipmentToShipId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await authenticatedFetch(`${API_BASE_URL}/shipments/ship/${shipmentToShipId}`, {
+                    method: 'PUT'
                 });
 
                 if (response.ok) {
@@ -1049,7 +1895,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (submitTrackingUpdateBtn) {
         submitTrackingUpdateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            if (!shipmentToUpdateTrackingId || !authToken) return;
+            if (!shipmentToUpdateTrackingId) return;
 
             const status = document.getElementById('trackingStatusSelect').value;
             const location = document.getElementById('trackingLocationInput').value.trim();
@@ -1079,12 +1925,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                const response = await fetch(`${API_BASE_URL}/shipments/tracking/${shipmentToUpdateTrackingId}`, {
+                const response = await authenticatedFetch(`${API_BASE_URL}/shipments/tracking/${shipmentToUpdateTrackingId}`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(payload)
                 });
 
@@ -1122,19 +1964,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchAndDisplayOrderDetails(orderId) {
-        if (!orderId || !authToken) return;
+        if (!orderId) return;
 
         openOrderModal();
         if (modalOrderLoader) modalOrderLoader.classList.remove('hidden');
         if (modalOrderContent) modalOrderContent.classList.add('hidden');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
+                method: 'GET'
             });
 
             if (!response.ok) throw new Error(`HTTP Error (${response.status})`);
@@ -1143,7 +1981,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderOrderDetailsModal(orderDetails);
 
         } catch (err) {
-            console.error('Failed to fetch order details:', err);
             showAlert(`Unable to fetch order details: ${err.message}`, 'error');
             closeOrderModal();
         } finally {
@@ -1298,19 +2135,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchAndDisplayShipmentDetails(shipmentId) {
-        if (!shipmentId || !authToken) return;
+        if (!shipmentId) return;
 
         openShipmentModal();
         if (modalShipmentLoader) modalShipmentLoader.classList.remove('hidden');
         if (modalShipmentContent) modalShipmentContent.classList.add('hidden');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/shipments/${shipmentId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/shipments/${shipmentId}`, {
+                method: 'GET'
             });
 
             if (!response.ok) throw new Error(`HTTP Error (${response.status})`);
@@ -1319,7 +2152,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderShipmentDetailsModal(details);
 
         } catch (err) {
-            console.error('Failed to fetch shipment details:', err);
             showAlert(`Unable to fetch shipment details: ${err.message}`, 'error');
             closeShipmentModal();
         } finally {
@@ -1416,19 +2248,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchAndDisplayInventoryDetails(inventoryId) {
-        if (!inventoryId || !authToken) return;
+        if (!inventoryId) return;
 
         openInventoryModal();
         if (modalInventoryLoader) modalInventoryLoader.classList.remove('hidden');
         if (modalInventoryContent) modalInventoryContent.classList.add('hidden');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/inventory/${inventoryId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/inventory/${inventoryId}`, {
+                method: 'GET'
             });
 
             if (!response.ok) throw new Error(`HTTP Error (${response.status})`);
@@ -1437,7 +2265,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderInventoryDetailsModal(details);
 
         } catch (err) {
-            console.error('Failed to fetch inventory details:', err);
             showAlert(`Unable to fetch inventory details: ${err.message}`, 'error');
             closeInventoryModal();
         } finally {
@@ -1496,19 +2323,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchAndDisplayGrnDetails(grnId) {
-        if (!grnId || !authToken) return;
+        if (!grnId) return;
 
         openGrnModal();
         if (modalGrnLoader) modalGrnLoader.classList.remove('hidden');
         if (modalGrnContent) modalGrnContent.classList.add('hidden');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/grn/${grnId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/grn/${grnId}`, {
+                method: 'GET'
             });
 
             if (!response.ok) throw new Error(`HTTP Error (${response.status})`);
@@ -1517,7 +2340,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderGrnDetailsModal(details);
 
         } catch (err) {
-            console.error('Failed to fetch GRN details:', err);
             showAlert(`Unable to fetch GRN details: ${err.message}`, 'error');
             closeGrnModal();
         } finally {
@@ -1592,12 +2414,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let grnSearchDebounceTimer = null;
 
     async function loadGrnDropdownOptions() {
-        if (!authToken) return;
-
         try {
-            const whResponse = await fetch(`${API_BASE_URL}/data/warehouses`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const whResponse = await authenticatedFetch(`${API_BASE_URL}/data/warehouses`);
             if (whResponse.ok) {
                 const warehouses = await whResponse.json();
                 const whSelect = document.getElementById('grnWarehouseFilter');
@@ -1609,9 +2427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const companyResponse = await fetch(`${API_BASE_URL}/grn/companies`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const companyResponse = await authenticatedFetch(`${API_BASE_URL}/grn/companies`);
             if (companyResponse.ok) {
                 const companies = await companyResponse.json();
                 const companySelect = document.getElementById('grnCompanyFilter');
@@ -1627,14 +2443,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Populate Dropdowns & Cache Products for Creation Form
     async function populateCreateGrnFormDropdowns() {
-        if (!authToken) return;
-
         try {
-            const compResponse = await fetch(`${API_BASE_URL}/grn/companies`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const compResponse = await authenticatedFetch(`${API_BASE_URL}/grn/companies`);
             if (compResponse.ok) {
                 const companies = await compResponse.json();
                 createGrnCompanySelect.innerHTML = `<option value="">-- Choose Company --</option>`;
@@ -1643,9 +2454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            const whResponse = await fetch(`${API_BASE_URL}/data/warehouses`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const whResponse = await authenticatedFetch(`${API_BASE_URL}/data/warehouses`);
             if (whResponse.ok) {
                 const warehouses = await whResponse.json();
                 createGrnWarehouseSelect.innerHTML = `<option value="">-- Select Warehouse --</option>`;
@@ -1654,9 +2463,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            const prodResponse = await fetch(`${API_BASE_URL}/data/products`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const prodResponse = await authenticatedFetch(`${API_BASE_URL}/data/products`);
             if (prodResponse.ok) {
                 availableProductsCache = await prodResponse.json();
             }
@@ -1665,7 +2472,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-// Dependent Dropdown: Load Vendors by Selected Company
     if (createGrnCompanySelect) {
         createGrnCompanySelect.addEventListener('change', async (e) => {
             const companyId = e.target.value;
@@ -1678,9 +2484,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/grn/vendors/${companyId}`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
+                const response = await authenticatedFetch(`${API_BASE_URL}/grn/vendors/${companyId}`);
                 if (response.ok) {
                     const vendors = await response.json();
                     if (vendors.length === 0) {
@@ -1700,7 +2504,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-// Add Item Row to Manifest Table
     function addGrnItemRow() {
         if (!grnItemsTableBody) return;
 
@@ -1745,7 +2548,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCreateGrnCalculations();
     }
 
-// Update Totals
     function updateCreateGrnCalculations() {
         const rows = document.querySelectorAll('.grn-item-row');
         let grandTotal = 0;
@@ -1760,8 +2562,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (grnModalGrandTotal) grnModalGrandTotal.textContent = `$${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
-// Open / Close Handlers
-    // Add 'async' here to allow awaiting the product fetch
     async function openCreateGrnModal() {
         if (createGrnForm) createGrnForm.reset();
         if (grnItemsTableBody) grnItemsTableBody.innerHTML = '';
@@ -1771,13 +2571,9 @@ document.addEventListener('DOMContentLoaded', () => {
             createGrnVendorSelect.innerHTML = `<option value="">-- Select Company First --</option>`;
         }
 
-        // Show modal first so user sees UI instantly
         if (createGrnModal) createGrnModal.classList.remove('hidden');
 
-        // Wait for companies, warehouses, AND products to load before adding the first row!
         await populateCreateGrnFormDropdowns();
-
-        // Now availableProductsCache is guaranteed to be full!
         addGrnItemRow();
     }
 
@@ -1798,7 +2594,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (submitCreateGrnBtn) {
         submitCreateGrnBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            if (!authToken) return;
 
             const vendorId = createGrnVendorSelect.value;
             const warehouseId = createGrnWarehouseSelect.value;
@@ -1826,12 +2621,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (createGrnModalAlert) createGrnModalAlert.classList.add('hidden');
 
             try {
-                const response = await fetch(`${API_BASE_URL}/grn/create`, {
+                const response = await authenticatedFetch(`${API_BASE_URL}/grn/create`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({
                         vendorId: vendorId || null,
                         warehouseId: warehouseId || null,
@@ -1846,54 +2637,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchAdminDashboard();
                 } else {
                     const errorData = await response.json();
-                    console.log("GRN Error Payload:", errorData);
-
-                    let mainMessage = errorData.message || "Validation failed";
-                    let fieldText = errorData.field || "";
-                    let detailText = errorData.detail || "";
-
-                    if (Array.isArray(errorData.errors) && errorData.errors.length > 0) {
-                        const firstErr = errorData.errors[0];
-                        fieldText = firstErr.field || firstErr.property || errorData.field || "";
-                        detailText = firstErr.message || firstErr.defaultMessage || errorData.detail || "";
-                    } else if (Array.isArray(errorData) && errorData.length > 0) {
-                        const firstErr = errorData[0];
-                        mainMessage = firstErr.message || mainMessage;
-                        fieldText = firstErr.field || "";
-                        detailText = firstErr.detail || firstErr.message || "";
-                    }
-
-                    if (createGrnModalAlertMessage) {
-                        createGrnModalAlertMessage.textContent = mainMessage;
-                    }
-
-                    if (createGrnModalAlertDetail) {
-                        createGrnModalAlertDetail.textContent = detailText || "Check your input values and try again.";
-                    }
-
-                    if (createGrnModalAlertField) {
-                        if (fieldText) {
-                            createGrnModalAlertField.textContent = `Field: ${fieldText}`;
-                            createGrnModalAlertField.classList.remove('hidden');
-                        } else {
-                            createGrnModalAlertField.classList.add('hidden');
-                        }
-                    }
-
-                    if (createGrnModalAlertStatus) {
-                        createGrnModalAlertStatus.textContent = `HTTP ${errorData.status || response.status}`;
-                        createGrnModalAlertStatus.classList.remove('hidden');
-                    }
-
-                    if (createGrnModalAlert) {
-                        createGrnModalAlert.classList.remove('hidden');
-                    }
+                    showValidationErrorAlert(
+                        errorData,
+                        createGrnModalAlert,
+                        createGrnModalAlertMessage,
+                        createGrnModalAlertDetail,
+                        createGrnModalAlertField,
+                        createGrnModalAlertStatus
+                    );
                 }
             } catch (err) {
-                if (createGrnModalAlertMessage) createGrnModalAlertMessage.textContent = "Error";
-                if (createGrnModalAlertDetail) createGrnModalAlertDetail.textContent = err.message;
-                if (createGrnModalAlertStatus) createGrnModalAlertStatus.textContent = "HTTP 500";
-                if (createGrnModalAlert) createGrnModalAlert.classList.remove('hidden');
+                showValidationErrorAlert(
+                    { message: "Network error encountered", detail: err.message },
+                    createGrnModalAlert,
+                    createGrnModalAlertMessage,
+                    createGrnModalAlertDetail,
+                    createGrnModalAlertField,
+                    createGrnModalAlertStatus
+                );
             } finally {
                 submitCreateGrnBtn.disabled = false;
                 if (createGrnSpinner) createGrnSpinner.classList.add('hidden');
@@ -1901,9 +2662,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
     async function fetchAdminGRNs() {
         const tbody = document.getElementById('grnTableBody');
-        if (!tbody || !authToken) return;
+        if (!tbody) return;
 
         tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading Goods Receive Notes...</td></tr>`;
 
@@ -1920,19 +2682,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (grnQueryState.warehouseId) queryParams.append('warehouseId', grnQueryState.warehouseId);
             if (grnQueryState.status) queryParams.append('status', grnQueryState.status);
 
-            const response = await fetch(`${API_BASE_URL}/grn?${queryParams.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/grn?${queryParams.toString()}`, {
+                method: 'GET'
             });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.clear();
-                window.location.href = 'signin.html';
-                return;
-            }
 
             if (!response.ok) throw new Error(`Failed to load GRN list (${response.status})`);
 
@@ -2102,25 +2854,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dashboard Analytics Overview
     async function fetchAdminDashboard() {
-        if (!authToken) return;
-
         showLoader(true);
         clearAlert();
 
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/dashboard`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/dashboard`, {
+                method: 'GET'
             });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.clear();
-                window.location.href = 'signin.html';
-                return;
-            }
 
             if (!response.ok) throw new Error(`Server status (${response.status})`);
 
@@ -2340,7 +3080,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAdminOrders() {
         const tbody = document.getElementById('ordersTableBody');
-        if (!tbody || !authToken) return;
+        if (!tbody) return;
 
         tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading order records...</td></tr>`;
 
@@ -2355,19 +3095,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (orderQueryState.search.trim()) queryParams.append('search', orderQueryState.search.trim());
             if (orderQueryState.status) queryParams.append('status', orderQueryState.status);
 
-            const response = await fetch(`${API_BASE_URL}/admin/orders?${queryParams.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/orders?${queryParams.toString()}`, {
+                method: 'GET'
             });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.clear();
-                window.location.href = 'signin.html';
-                return;
-            }
 
             if (!response.ok) throw new Error(`Failed to load orders (${response.status})`);
 
@@ -2427,7 +3157,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             `;
 
-            // Row click triggers detail modal
             const orderId = order.orderId || order.id;
             tr.addEventListener('click', (e) => {
                 if (e.target.closest('.action-cells')) return;
@@ -2569,7 +3298,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAdminShipments() {
         const tbody = document.getElementById('shipmentsTableBody');
-        if (!tbody || !authToken) return;
+        if (!tbody) return;
 
         tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading shipment records...</td></tr>`;
 
@@ -2585,19 +3314,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (shipmentQueryState.status) queryParams.append('status', shipmentQueryState.status);
             if (shipmentQueryState.warehouseId) queryParams.append('warehouseId', shipmentQueryState.warehouseId);
 
-            const response = await fetch(`${API_BASE_URL}/admin/shipments?${queryParams.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/shipments?${queryParams.toString()}`, {
+                method: 'GET'
             });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.clear();
-                window.location.href = 'signin.html';
-                return;
-            }
 
             if (!response.ok) throw new Error(`Failed to load shipments (${response.status})`);
 
@@ -2823,12 +3542,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let inventorySearchDebounceTimer = null;
 
     async function loadInventoryDropdownOptions() {
-        if (!authToken) return;
-
         try {
-            const whResponse = await fetch(`${API_BASE_URL}/data/warehouses`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const whResponse = await authenticatedFetch(`${API_BASE_URL}/data/warehouses`);
             if (whResponse.ok) {
                 const warehouses = await whResponse.json();
                 const whSelect = document.getElementById('inventoryWarehouseFilter');
@@ -2840,9 +3555,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const prodResponse = await fetch(`${API_BASE_URL}/data/products`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            const prodResponse = await authenticatedFetch(`${API_BASE_URL}/data/products`);
             if (prodResponse.ok) {
                 const products = await prodResponse.json();
                 const prodSelect = document.getElementById('inventoryProductFilter');
@@ -2860,7 +3573,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAdminInventory() {
         const tbody = document.getElementById('inventoryTableBody');
-        if (!tbody || !authToken) return;
+        if (!tbody) return;
 
         tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading inventory records...</td></tr>`;
 
@@ -2878,19 +3591,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (inventoryQueryState.lowStock !== null) queryParams.append('lowStock', inventoryQueryState.lowStock);
             if (inventoryQueryState.outOfStock !== null) queryParams.append('outOfStock', inventoryQueryState.outOfStock);
 
-            const response = await fetch(`${API_BASE_URL}/admin/inventory?${queryParams.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/inventory?${queryParams.toString()}`, {
+                method: 'GET'
             });
-
-            if (response.status === 401 || response.status === 403) {
-                localStorage.clear();
-                window.location.href = 'signin.html';
-                return;
-            }
 
             if (!response.ok) throw new Error(`Failed to load inventory (${response.status})`);
 
@@ -3112,6 +3815,10 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchAdminGRNs();
         } else if (targetId === 'secVendors') {
             fetchAdminVendors();
+        } else if (targetId === 'secCustomers') {
+            fetchAdminCustomers();
+        } else if (targetId === 'secEmployees') {
+            fetchAdminEmployees();
         }
 
         switch (targetId) {
@@ -3141,11 +3848,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'secCustomers':
                 if (currentPageTitle) currentPageTitle.textContent = 'Customer Directory';
-                if (currentPageSubtitle) currentPageSubtitle.textContent = 'Registered customer accounts and details';
+                if (currentPageSubtitle) currentPageSubtitle.textContent = 'Registered customer accounts, company ties, and lifecycle metrics';
                 break;
             case 'secVendors':
                 if (currentPageTitle) currentPageTitle.textContent = 'Vendor Network & Supplier Operations';
                 if (currentPageSubtitle) currentPageSubtitle.textContent = 'Supplier directory, performance ratings, and status lifecycles';
+                break;
+            case 'secEmployees':
+                if (currentPageTitle) currentPageTitle.textContent = 'Employee Management';
+                if (currentPageSubtitle) currentPageSubtitle.textContent = 'Staff catalog, departments & system role permissions';
                 break;
         }
     }
@@ -3158,8 +3869,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (signOutBtn) {
         signOutBtn.addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = 'signin.html';
+            clearSession();
         });
     }
 
@@ -3180,15 +3890,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dashAlert) dashAlert.classList.add('hidden');
     }
 
-    // Initialize View & Event Controls
+    // Initialize View Controls & Data Requests
     initOrdersTableEvents();
     initShipmentsTableEvents();
     initInventoryTableEvents();
     initGrnTableEvents();
     initVendorTableEvents();
+    initCustomerTableEvents();
+    initEmployeeTableEvents();
     loadInventoryDropdownOptions();
     loadGrnDropdownOptions();
     loadVendorDropdownOptions();
+    loadCustomerDropdownOptions();
     fetchAdminDashboard();
     switchSection('secDashboard');
 });

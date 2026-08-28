@@ -4,19 +4,19 @@ import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.audit.AuditLog;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.core.service.AuditLogService;
+import com.globaltrade.logistics.ejb.repository.AdminAuditRepository;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import jakarta.inject.Inject;
 
 import java.time.LocalDateTime;
 
 @Stateless
 public class AuditServiceBean implements AuditLogService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Inject
+    private AdminAuditRepository adminAuditRepository;
 
     @Override
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
@@ -30,6 +30,12 @@ public class AuditServiceBean implements AuditLogService {
                 .description(description)
                 .build();
 
-        entityManager.persist(auditLog);
+        adminAuditRepository.save(auditLog);
+    }
+
+    @Override
+    @TransactionAttribute(TransactionAttributeType.SUPPORTS)
+    public boolean existsByEntityAndAction(String entityType, String entityId, AuditAction action) {
+        return adminAuditRepository.existsByEntityAndAction(entityType, entityId, action);
     }
 }

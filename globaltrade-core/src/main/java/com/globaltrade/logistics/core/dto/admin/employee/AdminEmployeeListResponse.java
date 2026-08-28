@@ -13,7 +13,7 @@ public record AdminEmployeeListResponse(
         String lastName,
         String email,
         String mobile,
-        RoleType roleType,
+        EmployeeDepartment roleType,
         EmployeeStatus status
 ) {
 }

@@ -3,9 +3,8 @@ package com.globaltrade.logistics.ejb.beans;
 import com.globaltrade.logistics.core.dto.inventory.InventoryMonitorRecord;
 import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.audit.AuditLog;
-import com.globaltrade.logistics.core.service.AuditLogService;
 import com.globaltrade.logistics.core.service.InventoryAlertService;
-import com.globaltrade.logistics.ejb.repository.AuditRepository;
+import com.globaltrade.logistics.ejb.repository.AdminAuditRepository;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
@@ -19,7 +18,7 @@ public class InventoryAlertServiceBean implements InventoryAlertService {
     private static final Logger LOGGER = Logger.getLogger(InventoryAlertServiceBean.class.getName());
 
     @Inject
-    private AuditRepository auditRepository;
+    private AdminAuditRepository adminAuditRepository;
 
     @Override
     @TransactionAttribute(TransactionAttributeType.REQUIRED)
@@ -42,6 +41,6 @@ public class InventoryAlertServiceBean implements InventoryAlertService {
                 .actionTimestamp(LocalDateTime.now())
                 .description(details)
                 .build();
-        auditRepository.save(auditLog);
+        adminAuditRepository.save(auditLog);
     }
 }

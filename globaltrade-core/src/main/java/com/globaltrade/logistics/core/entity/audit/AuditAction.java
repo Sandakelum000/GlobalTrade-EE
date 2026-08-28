@@ -1,6 +1,4 @@
-package com.globaltrade.logistics.core.entity.audit;
-
-public enum AuditAction {
+package com.globaltrade.logistics.core.entity.audit;public enum AuditAction {
     CREATE,
     UPDATE,
     DELETE,
@@ -11,5 +9,8 @@ public enum AuditAction {
     REJECT,
     CANCEL,
     SHIP,
-    DELIVER
+    DELIVER,
+    SHIPMENT_OVERDUE
 }
+
+

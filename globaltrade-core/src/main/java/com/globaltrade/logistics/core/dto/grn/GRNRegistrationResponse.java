@@ -1,5 +1,7 @@
 package com.globaltrade.logistics.core.dto.grn;
 
+import com.globaltrade.logistics.core.service.AdminCustomerService;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,7 +17,7 @@ public record GRNRegistrationResponse(
         String status,
         BigDecimal totalCost,
         List<GRNItemResponse> items
-) implements AuditableResponse{
+) implements AdminCustomerService.AuditableResponse {
     @Override
     public UUID getEntityId() {
         return grnId;

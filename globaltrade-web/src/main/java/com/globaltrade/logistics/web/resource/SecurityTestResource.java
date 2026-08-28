@@ -16,6 +16,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,24 +50,26 @@ public class SecurityTestResource {
 //            entityManager.persist(c);
 //        }
 
-        Country country = entityManager.find(Country.class, UUID.fromString("31daa3f2-9efd-11f1-913b-58733aca4705"));
+//        Country country = entityManager.find(Country.class, UUID.fromString("31daa3f2-9efd-11f1-913b-58733aca4705"));
+//
+//        Address address = Address.builder()
+//                .country(country)
+//                .city("Jurong East")
+//                .district("Central")
+//                .postalCode("12345")
+//                .line1("No 66")
+//                .line2("New Jurong East")
+//                .stateProvince("Johor")
+//                .build();
+//
+//        Warehouse warehouse = Warehouse.builder()
+//                .name("GlobalTrade-Warehouse-B")
+//                .address(address)
+//                .build();
+//
+//        entityManager.persist(warehouse);
 
-        Address address = Address.builder()
-                .country(country)
-                .city("Jurong East")
-                .district("Central")
-                .postalCode("12345")
-                .line1("No 66")
-                .line2("New Jurong East")
-                .stateProvince("Johor")
-                .build();
-
-        Warehouse warehouse = Warehouse.builder()
-                .name("GlobalTrade-Warehouse-B")
-                .address(address)
-                .build();
-
-        entityManager.persist(warehouse);
+        LocalDateTime dateTime = LocalDateTime.of(2026, Month.AUGUST, 1, 0, 0);
 
         return "PUBLIC - anyone can access";
     }
