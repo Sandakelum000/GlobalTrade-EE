@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>Go to Dashboard</span>
                     <i class="fa-solid fa-arrow-right text-xs"></i>
                 `;
-                heroRegisterBtn.onclick = () => { window.location.href = 'dashboard.html'; };
+                heroRegisterBtn.onclick = () => { window.location.href = 'customer.html'; };
             }
         } else {
             if (heroRegisterBtn) {

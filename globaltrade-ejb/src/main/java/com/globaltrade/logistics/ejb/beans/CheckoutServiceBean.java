@@ -7,6 +7,7 @@ import com.globaltrade.logistics.core.entity.order.Order;
 import com.globaltrade.logistics.core.entity.order.OrderItem;
 import com.globaltrade.logistics.core.entity.order.OrderStatus;
 import com.globaltrade.logistics.core.entity.payment.PayHereDTO;
+import com.globaltrade.logistics.core.exception.CheckoutException;
 import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.CheckoutService;
 import com.globaltrade.logistics.core.service.ConfigService;
@@ -23,10 +24,6 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 @Stateless
-@Audited(
-        action = AuditAction.CREATE,
-        entity = "Payment"
-)
 @Transactional(Transactional.TxType.REQUIRED)
 public class CheckoutServiceBean implements CheckoutService {
     private static final Logger LOGGER = Logger.getLogger(CheckoutServiceBean.class.getName());
@@ -41,20 +38,20 @@ public class CheckoutServiceBean implements CheckoutService {
     @Override
     public PayHereDTO processCheckout(UUID orderId) {
         if(orderId == null) {
-            throw new IllegalArgumentException("Illegal payment request");
+            throw new CheckoutException("Illegal payment request");
         }
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order id not found"));
+                .orElseThrow(() -> new CheckoutException("Order id not found"));
 
         if(order.getOrderStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalArgumentException("This order is already CANCELLED");
+            throw new CheckoutException("This order is already CANCELLED");
         }
         if(order.getOrderStatus() != OrderStatus.PENDING) {
-            throw new IllegalArgumentException("Payment can only be made on pending orders");
+            throw new CheckoutException("Payment can only be made on pending orders");
         }
         if(paymentRepository.findByOrderId(order.getId()).isPresent()) {
-            throw new IllegalArgumentException("Payment already exists for order id " + order.getId());
+            throw new CheckoutException("Payment already exists for order id " + order.getId());
         }
 
         return createPaymentDetails(order);

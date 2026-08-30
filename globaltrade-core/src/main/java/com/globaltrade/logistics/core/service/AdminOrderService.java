@@ -19,4 +19,5 @@ public interface AdminOrderService {
             int size
     );
     AdminOrderDetailsResponse getOrderDetails(UUID orderId);
+    void cancelExpiredUnpaidOrders();
 }

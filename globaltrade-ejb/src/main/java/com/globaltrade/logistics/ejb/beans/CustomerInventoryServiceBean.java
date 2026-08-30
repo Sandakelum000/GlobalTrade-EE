@@ -4,6 +4,7 @@ import com.globaltrade.logistics.core.dto.inventory.dashboard.CustomerInventoryR
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
 import com.globaltrade.logistics.core.service.CustomerInventoryService;
 import com.globaltrade.logistics.ejb.repository.InventoryRepository;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
@@ -19,6 +20,7 @@ public class CustomerInventoryServiceBean implements CustomerInventoryService {
 
     @Override
     @TransactionAttribute(TransactionAttributeType.SUPPORTS)
+    @RolesAllowed({"ADMIN","CUSTOMER"})
     public List<CustomerInventoryResponse> getAvailableInventory() {
         return inventoryRepository.findAvailableInventory()
                 .stream()

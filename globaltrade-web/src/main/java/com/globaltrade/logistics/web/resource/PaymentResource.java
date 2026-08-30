@@ -74,7 +74,7 @@ public class PaymentResource {
         formMap.add("md5sig", md5Sig);
 
         if (!PayHereUtil.validateNotify(formMap)) {
-            System.out.println("SIGNATURE FAILED");
+            LOGGER.warning("PayHere notification signature validation failed");
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("INVALID SIGNATURE").build();
         }

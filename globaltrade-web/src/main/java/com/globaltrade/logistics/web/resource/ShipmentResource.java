@@ -17,7 +17,7 @@ import java.util.UUID;
 @Path("/shipments")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed({"ADMIN"})
+@RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
 public class ShipmentResource {
 
     @EJB

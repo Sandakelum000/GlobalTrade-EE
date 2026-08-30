@@ -1,5 +1,6 @@
 package com.globaltrade.logistics.ejb.messaging;
 
+import com.globaltrade.logistics.core.dto.shipment.ShipmentCreationResponse;
 import com.globaltrade.logistics.core.dto.shipment.ShipmentRegistrationRequest;
 import com.globaltrade.logistics.core.service.ShipmentService;
 import jakarta.ejb.ActivationConfigProperty;
@@ -45,7 +46,7 @@ public class ShipmentCreationMDB implements MessageListener {
 
             LOGGER.info("Received Shipment request for: Order ID: " + orderId);
 
-            shipmentService.createShipmentsForOrder(orderId); //async shipment automation
+            ShipmentCreationResponse response = shipmentService.createShipmentsForOrder(orderId);//async shipment automation
 
         }catch (Exception e){
             LOGGER.log(Level.WARNING, e.getMessage(), "shipment creation failed"+e.getMessage());

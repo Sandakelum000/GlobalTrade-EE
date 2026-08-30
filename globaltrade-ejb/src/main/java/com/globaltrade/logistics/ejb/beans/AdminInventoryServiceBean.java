@@ -6,6 +6,7 @@ import com.globaltrade.logistics.core.dto.admin.inventory.ProductOptionResponse;
 import com.globaltrade.logistics.core.dto.admin.inventory.WarehouseOptionResponse;
 import com.globaltrade.logistics.core.dto.admin.order.PageResponse;
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
+import com.globaltrade.logistics.core.exception.AdminInventoryServiceException;
 import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.AdminInventoryService;
 import com.globaltrade.logistics.ejb.repository.AdminInventoryRepository;
@@ -29,13 +30,13 @@ public class AdminInventoryServiceBean implements AdminInventoryService {
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageResponse<AdminInventoryListResponse> getInventories(String search, UUID warehouseId, UUID productId, Boolean lowStock, Boolean outOfStock, String sortBy, String direction, int page, int size) {
         if (page < 0) {
-            throw new IllegalArgumentException(
+            throw new AdminInventoryServiceException(
                     "Page cannot be negative"
             );
         }
 
         if (size < 1 || size > 100) {
-            throw new IllegalArgumentException(
+            throw new AdminInventoryServiceException(
                     "Page size must be between 1 and 100"
             );
         }
@@ -68,7 +69,7 @@ public class AdminInventoryServiceBean implements AdminInventoryService {
     @Transactional(Transactional.TxType.SUPPORTS)
     public AdminInventoryDetailsResponse getInventoryDetails(UUID inventoryId) {
         if (inventoryId == null) {
-            throw new IllegalArgumentException("Inventory ID cannot be null");
+            throw new AdminInventoryServiceException("Inventory ID cannot be null");
         }
 
         Inventory inventory = adminInventoryRepository.findDetailsById(inventoryId)
@@ -78,7 +79,7 @@ public class AdminInventoryServiceBean implements AdminInventoryService {
     }
 
     @Override
-    @RolesAllowed("ADMIN")
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<WarehouseOptionResponse> getWarehouseOptions() {
         return adminInventoryRepository.findWarehouseOptions()

@@ -31,7 +31,4 @@ public interface AdminCustomerService {
 
     List<CompanyResponse> getCustomerCompanies();
 
-    interface AuditableResponse {
-        UUID getEntityId();
-    }
 }

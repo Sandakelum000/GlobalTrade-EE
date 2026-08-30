@@ -9,6 +9,7 @@ import com.globaltrade.logistics.core.entity.order.OrderStatus;
 import com.globaltrade.logistics.core.entity.payment.Payment;
 import com.globaltrade.logistics.core.entity.payment.PaymentMethod;
 import com.globaltrade.logistics.core.entity.payment.PaymentStatus;
+import com.globaltrade.logistics.core.exception.PaymentException;
 import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.PaymentService;
@@ -43,26 +44,26 @@ public class PaymentServiceBean implements PaymentService {
 
     @Override
     @Audited(
-            action = AuditAction.CREATE,
+            action = AuditAction.PAYMENT,
             entity = "Payment"
     )
     @Transactional(Transactional.TxType.REQUIRED)
     public PaymentRegistrationResponse makePayment(UUID orderId,int paymentStatus) {
         if(orderId == null) {
-            throw new IllegalArgumentException("Illegal payment request");
+            throw new PaymentException("Illegal payment request");
         }
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order id not found"));
+                .orElseThrow(() -> new PaymentException("Order id not found"));
 
         if(order.getOrderStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalArgumentException("This order is already CANCELLED");
+            throw new PaymentException("This order is already CANCELLED");
         }
         if(order.getOrderStatus() != OrderStatus.PENDING) {
-            throw new IllegalArgumentException("Payment can only be made on pending orders");
+            throw new PaymentException("Payment can only be made on pending orders");
         }
         if(paymentRepository.findByOrderId(order.getId()).isPresent()) {
-            throw new IllegalArgumentException("Payment already exists for order id " + order.getId());
+            throw new PaymentException("Payment already exists for order id " + order.getId());
         }
         String nextPaymentNumber = numberSequenceService.next(SEQUENCE_KEY, PREFIX, WIDTH);
 

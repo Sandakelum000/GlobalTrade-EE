@@ -86,6 +86,6 @@ public class RouteOptimizationServiceBean implements RouteOptimizationService {
 
 
     private String generateRouteNames(Shipment shipment) {
-        return shipment.getOriginAddress().getCountry() + " -> " + shipment.getDestinationAddress().getCountry();
+        return shipment.getOriginAddress().getCountry().getName() + " -> " + shipment.getDestinationAddress().getCountry().getName();
     }
 }

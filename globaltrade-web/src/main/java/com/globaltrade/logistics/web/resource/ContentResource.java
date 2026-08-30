@@ -41,7 +41,7 @@ public class ContentResource {
 
     @GET
     @Path("/warehouses")
-    @RolesAllowed({"ADMIN"})
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     public Response getWarehouseOptions() {
         List<WarehouseOptionResponse> response = adminInventoryService.getWarehouseOptions();
         return Response.ok(response).build();

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard | GlobalTrade Logistics</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-zinc-100 text-zinc-900 min-h-screen flex font-sans antialiased overflow-x-hidden select-none">
+
+<!-- Left Navigation Sidebar -->
+<aside id="managerSidebar"
+       class="w-64 bg-black text-zinc-300 flex flex-col fixed inset-y-0 left-0 z-30 shadow-2xl border-r border-zinc-800 transition-all duration-300">
+
+    <!-- Brand Header -->
+    <div class="h-16 flex items-center justify-between px-4 border-b border-zinc-800">
+        <div class="flex items-center gap-3 overflow-hidden">
+            <div class="w-9 h-9 bg-white text-black rounded-lg flex items-center justify-center font-bold shadow-md shrink-0">
+                <i class="fa-solid fa-boxes-packing text-base"></i>
+            </div>
+            <div class="sidebar-text">
+                <span class="text-sm font-extrabold text-white block leading-tight tracking-tight whitespace-nowrap">GlobalTrade</span>
+                <span class="text-[11px] font-sans tracking-wide text-zinc-400 block whitespace-nowrap">Warehouse Manager</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-3 py-6 space-y-1.5 font-medium text-xs">
+        <button class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-white bg-zinc-900 border border-zinc-800"
+                title="Shipments">
+            <i class="fa-solid fa-truck-fast text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Shipments</span>
+        </button>
+    </nav>
+
+    <!-- Sidebar Signout -->
+    <div class="p-3 border-t border-zinc-800">
+        <button id="signOutBtn"
+                class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg text-xs font-semibold text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all"
+                title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Sign Out</span>
+        </button>
+    </div>
+</aside>
+
+<!-- Main Wrapper -->
+<div id="mainWrapper" class="flex-1 ml-64 flex flex-col min-w-0 transition-all duration-300">
+
+    <!-- Top Header -->
+    <header class="h-16 bg-white border-b border-zinc-200 sticky top-0 z-20 flex items-center justify-between px-8">
+        <div>
+            <h1 class="text-base font-extrabold text-black tracking-tight">Shipments & Logistics Control</h1>
+            <p class="text-xs text-zinc-500">Filter, inspect, log tracking checkpoints, and dispatch warehouse shipments</p>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button id="refreshDataBtn"
+                    class="bg-black text-white hover:bg-zinc-800 font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-md flex items-center gap-2 border border-zinc-900">
+                <i class="fa-solid fa-rotate-right text-xs"></i>
+                <span>Refresh Data</span>
+            </button>
+
+            <div class="h-6 w-px bg-zinc-200"></div>
+
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                    <span id="userAvatar">M</span>
+                </div>
+                <div class="text-left hidden sm:block">
+                    <div class="flex items-center gap-2">
+                        <span id="usernameDisplay" class="text-xs font-bold text-black block leading-tight">Manager</span>
+                        <span id="roleBadge" class="bg-black text-white text-[10px] px-2 py-0.5 rounded font-semibold">Manager</span>
+                    </div>
+                    <span class="text-[11px] text-zinc-500 block">Warehouse Supervisor</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 p-8 space-y-6">
+
+        <div id="dashAlert"
+             class="hidden p-4 rounded-xl text-xs border flex items-center gap-3 shadow-sm bg-black text-white border-zinc-900">
+            <i id="dashAlertIcon" class="fa-solid text-sm"></i>
+            <span id="dashAlertMessage" class="flex-1"></span>
+        </div>
+
+        <!-- SHIPMENTS MANAGEMENT TABLE SECTION -->
+        <section class="space-y-6">
+            <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-black tracking-tight">Freight Shipments Directory</h2>
+                        <p class="text-xs text-zinc-500">Monitor warehouse dispatch timelines, inspect telemetry, and log pre-dispatch tracking checkpoints.</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Total Freight: <strong id="shipmentsTotalCount" class="text-black">0</strong>
+                        </span>
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Page: <strong id="shipmentsPageInfo" class="text-black">0 / 0</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-zinc-100">
+                    <div class="relative flex-1 w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                        <input type="text" id="shipmentSearchInput"
+                               placeholder="Search by Shipment #, Order #, or Warehouse Name..."
+                               class="w-full bg-zinc-50 border border-zinc-200 rounded-lg pl-9 pr-4 py-2 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                    </div>
+
+                    <!-- Warehouse Filter -->
+                    <div class="w-full md:w-48">
+                        <select id="shipmentWarehouseFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Warehouses</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="w-full md:w-48">
+                        <select id="shipmentStatusFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Freight Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="PROCESSING">Processing</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="IN_TRANSIT">In Transit</option>
+                            <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <!-- Page Size -->
+                    <div class="w-full md:w-32">
+                        <select id="shipmentPageSize"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="10">10 per page</option>
+                            <option value="20" selected>20 per page</option>
+                            <option value="50">50 per page</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-zinc-100/90 text-[11px] font-bold text-zinc-600 border-b border-zinc-200 uppercase tracking-wider select-none">
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors shipment-sortable-header" data-sort="shipmentNumber">
+                                Shipment Ref <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors shipment-sortable-header" data-sort="order.orderNumber">
+                                Order Ref <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors shipment-sortable-header" data-sort="warehouse.name">
+                                Origin Warehouse <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors shipment-sortable-header" data-sort="status">
+                                Status <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors shipment-sortable-header" data-sort="shippedAt">
+                                Shipped At <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors shipment-sortable-header" data-sort="estimatedDeliveryDate">
+                                Est. Delivery <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 text-right cursor-pointer hover:bg-zinc-200/70 transition-colors shipment-sortable-header" data-sort="deliveredAt">
+                                Delivered At <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="shipmentsTableBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                    </table>
+                </div>
+
+                <div class="p-4 border-t border-zinc-200 flex items-center justify-between bg-zinc-50">
+                    <span id="shipmentsPaginationText" class="text-xs text-zinc-500">Showing 0 of 0 entries</span>
+
+                    <div class="flex items-center gap-2">
+                        <button id="shipmentPrevPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                        </button>
+                        <button id="shipmentNextPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- SHIPMENT DETAILS MODAL -->
+<div id="shipmentDetailsModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-200">
+    <div class="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-truck-ramp-box text-blue-400 text-base"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 id="modalShipmentNumber" class="text-base font-bold tracking-tight">Shipment Details</h3>
+                        <span id="modalShipmentStatusBadge"></span>
+                    </div>
+                    <p id="modalShipmentMeta" class="text-xs text-zinc-400">Order Ref: -- | Warehouse: --</p>
+                </div>
+            </div>
+            <button id="closeShipmentModalBtn"
+                    class="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6 overflow-y-auto text-xs flex-1 bg-zinc-50/50">
+            <div id="modalShipmentLoader" class="hidden py-12 text-center text-zinc-500">
+                <i class="fa-solid fa-spinner spinner text-2xl mb-2 text-black block"></i> Fetching Shipment Telemetry...
+            </div>
+            <div id="modalShipmentContent" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-3.5 border border-zinc-200 rounded-xl shadow-sm">
+                        <span class="text-zinc-400 block text-[11px] font-medium">Route Distance</span>
+                        <strong id="modalRouteDistance" class="text-black text-sm block mt-0.5">-- km</strong>
+                    </div>
+                    <div class="bg-white p-3.5 border border-zinc-200 rounded-xl shadow-sm">
+                        <span class="text-zinc-400 block text-[11px] font-medium">Est. Duration</span>
+                        <strong id="modalRouteHours" class="text-black text-sm block mt-0.5">-- hours</strong>
+                    </div>
+                    <div class="bg-white p-3.5 border border-zinc-200 rounded-xl shadow-sm">
+                        <span class="text-zinc-400 block text-[11px] font-medium">Route Name</span>
+                        <strong id="modalRouteName" class="text-black text-xs block mt-0.5 truncate">--</strong>
+                    </div>
+                    <div class="bg-white p-3.5 border border-zinc-200 rounded-xl shadow-sm">
+                        <span class="text-zinc-400 block text-[11px] font-medium">Route Risk Score</span>
+                        <span id="modalRouteRiskScore" class="block mt-0.5">--</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-2">
+                        <div class="flex items-center gap-2 border-b border-zinc-100 pb-2">
+                            <i class="fa-solid fa-warehouse text-zinc-400"></i>
+                            <h4 class="font-bold text-black text-xs">Origin Warehouse Address</h4>
+                        </div>
+                        <div id="modalOriginAddress" class="text-zinc-700 space-y-1 leading-relaxed">
+                            <span class="text-zinc-400 italic">No origin recorded.</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-2">
+                        <div class="flex items-center gap-2 border-b border-zinc-100 pb-2">
+                            <i class="fa-solid fa-location-dot text-zinc-400"></i>
+                            <h4 class="font-bold text-black text-xs">Destination Address</h4>
+                        </div>
+                        <div id="modalDestinationAddress" class="text-zinc-700 space-y-1 leading-relaxed">
+                            <span class="text-zinc-400 italic">No destination recorded.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-3 bg-zinc-100 border-b border-zinc-200 flex items-center justify-between">
+                        <h4 class="font-bold text-black text-xs">Shipment Manifest Items</h4>
+                        <span id="modalShipmentItemsCount"
+                              class="text-[10px] bg-white border border-zinc-200 px-2.5 py-0.5 rounded font-bold">0 Items</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                            <tr class="bg-zinc-50 text-[11px] font-bold text-zinc-500 uppercase tracking-wider border-b border-zinc-200">
+                                <th class="py-2.5 px-4">Product Title</th>
+                                <th class="py-2.5 px-4">Order Item ID</th>
+                                <th class="py-2.5 px-4 text-center">Quantity</th>
+                                <th class="py-2.5 px-4 text-right">Item Status</th>
+                            </tr>
+                            </thead>
+                            <tbody id="modalShipmentItemsBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="bg-white border border-zinc-200 rounded-xl p-4 shadow-sm space-y-3">
+                    <h4 class="font-bold text-black text-xs flex items-center gap-2 border-b border-zinc-100 pb-2">
+                        <i class="fa-solid fa-route text-zinc-400"></i> Tracking & Dispatch History Log
+                    </h4>
+                    <div id="modalShipmentTrackingTimeline" class="space-y-3 pt-1"></div>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-3 border-t border-zinc-200 bg-zinc-100 flex justify-end shrink-0">
+            <button id="modalShipmentCloseFooterBtn"
+                    class="bg-black text-white hover:bg-zinc-800 font-bold text-xs px-5 py-2 rounded-lg transition-all shadow-sm">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- SHIP SHIPMENT CONFIRMATION MODAL -->
+<div id="shipConfirmModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-200">
+    <div class="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-zinc-200 bg-blue-600 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-blue-700 border border-blue-500 flex items-center justify-center shrink-0 text-white">
+                    <i class="fa-solid fa-paper-plane text-base"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold tracking-tight">Confirm Shipment Dispatch</h3>
+                    <p class="text-xs text-blue-100">Deduct warehouse stock & set status to SHIPPED</p>
+                </div>
+            </div>
+            <button id="closeShipConfirmModalBtn"
+                    class="text-blue-200 hover:text-white p-1.5 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs text-zinc-700">
+            <div id="shipModalAlert"
+                 class="hidden p-3 rounded-lg text-xs bg-red-50 text-red-800 border border-red-200 font-medium space-y-1">
+                <div class="font-bold text-red-900 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-exclamation"></i> <span id="shipModalAlertMessage">Shipment dispatch failed</span></span>
+                    <span id="shipModalAlertStatus" class="bg-red-200 text-red-900 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold"></span>
+                </div>
+                <div id="shipModalAlertField" class="text-[11px] font-semibold text-red-900 pt-0.5"></div>
+                <div id="shipModalAlertDetail" class="text-[11px] text-red-700 pl-0.5"></div>
+            </div>
+
+            <p class="text-sm">Are you sure you want to dispatch shipment <strong id="shipModalShipmentRef" class="text-black font-extrabold">--</strong>?</p>
+
+            <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-3 space-y-1.5 text-[11px] text-zinc-600">
+                <div class="flex justify-between"><span class="text-zinc-400">Order Ref:</span> <strong id="shipModalOrderRef" class="text-zinc-800">--</strong></div>
+                <div class="flex justify-between"><span class="text-zinc-400">Warehouse:</span> <strong id="shipModalWarehouseName" class="text-zinc-800">--</strong></div>
+                <div class="flex justify-between"><span class="text-zinc-400">Current Status:</span> <span id="shipModalCurrentStatus">--</span></div>
+            </div>
+
+            <p class="text-zinc-500 text-[11px] leading-relaxed">
+                Shipping this order item will permanently deduct actual warehouse inventory, release reserved stock, set shipment status to <span class="font-semibold text-blue-600">SHIPPED</span>, and finalize warehouse handling.
+            </p>
+        </div>
+
+        <div class="px-6 py-3 border-t border-zinc-200 bg-zinc-100 flex justify-end gap-2 shrink-0">
+            <button id="shipModalDismissBtn"
+                    class="bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-sm">
+                Cancel
+            </button>
+            <button id="confirmShipShipmentBtn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-sm flex items-center gap-2">
+                <i id="shipBtnSpinner" class="fa-solid fa-spinner spinner hidden"></i>
+                <i id="shipBtnIcon" class="fa-solid fa-paper-plane"></i>
+                <span>Dispatch Shipment</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- UPDATE SHIPMENT TRACKING MODAL (WAREHOUSE PRE-DISPATCH CHECKPOINTS) -->
+<div id="updateTrackingModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-200">
+    <div class="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0 text-white">
+                    <i class="fa-solid fa-route text-blue-400 text-base"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold tracking-tight">Update Pre-Dispatch Checkpoint</h3>
+                    <p class="text-xs text-zinc-400">Log warehouse tracking status before final dispatch</p>
+                </div>
+            </div>
+            <button id="closeTrackingModalBtn"
+                    class="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="trackingForm" class="p-6 space-y-4 text-xs text-zinc-700">
+            <div id="trackingModalAlert"
+                 class="hidden p-3 rounded-lg text-xs bg-red-50 text-red-800 border border-red-200 font-medium space-y-1">
+                <div class="font-bold text-red-900 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-exclamation"></i> <span id="trackingModalAlertMessage">Tracking update failed</span></span>
+                    <span id="trackingModalAlertStatus" class="bg-red-200 text-red-900 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold"></span>
+                </div>
+                <div id="trackingModalAlertField" class="text-[11px] font-semibold text-red-900 pt-0.5"></div>
+                <div id="trackingModalAlertDetail" class="text-[11px] text-red-700 pl-0.5"></div>
+            </div>
+
+            <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-3 flex justify-between items-center text-[11px]">
+                <div>
+                    <span class="text-zinc-400 block">Shipment Ref</span>
+                    <strong id="trackingModalShipmentRef" class="text-black font-extrabold text-xs">--</strong>
+                </div>
+                <div class="text-right">
+                    <span class="text-zinc-400 block">Current Status</span>
+                    <span id="trackingModalCurrentStatus">--</span>
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="trackingStatusSelect" class="block font-bold text-zinc-800">Warehouse Tracking Status <span class="text-red-500">*</span></label>
+                <select id="trackingStatusSelect" required
+                        class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                    <option value="">-- Select Pre-Dispatch Checkpoint --</option>
+                    <option value="LABEL_CREATED">LABEL_CREATED</option>
+                    <option value="PROCESSING">PROCESSING</option>
+                </select>
+                <p class="text-[11px] text-zinc-500">Warehouse managers can log updates up until final shipment dispatch.</p>
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="trackingLocationInput" class="block font-bold text-zinc-800">Checkpoint Location <span class="text-red-500">*</span></label>
+                <input type="text" id="trackingLocationInput" required
+                       placeholder="e.g. Warehouse Gate 4, Sorting Facility A"
+                       class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-black focus:bg-white transition-colors">
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="trackingDescriptionInput" class="block font-bold text-zinc-800">Status Description / Log <span class="text-red-500">*</span></label>
+                <textarea id="trackingDescriptionInput" required rows="3"
+                          placeholder="e.g. Shipping label generated and package packed."
+                          class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-black focus:bg-white transition-colors"></textarea>
+            </div>
+        </form>
+
+        <div class="px-6 py-3 border-t border-zinc-200 bg-zinc-100 flex justify-end gap-2 shrink-0">
+            <button id="trackingModalDismissBtn"
+                    class="bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-sm">
+                Cancel
+            </button>
+            <button id="submitTrackingUpdateBtn"
+                    class="bg-black hover:bg-zinc-800 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-sm flex items-center gap-2">
+                <i id="trackingBtnSpinner" class="fa-solid fa-spinner spinner hidden"></i>
+                <i id="trackingBtnIcon" class="fa-solid fa-floppy-disk"></i>
+                <span>Save Tracking Update</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/manager.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-package com.globaltrade.logistics.ejb.beans;
+package com.globaltrade.logistics.ejb.repository;
 
 import com.globaltrade.logistics.core.entity.company.Company;
 import com.globaltrade.logistics.core.entity.customer.Customer;

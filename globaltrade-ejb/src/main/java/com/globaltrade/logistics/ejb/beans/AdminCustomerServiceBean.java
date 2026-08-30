@@ -10,7 +10,7 @@ import com.globaltrade.logistics.core.entity.customer.CustomerStatus;
 import com.globaltrade.logistics.core.entity.customer.CustomerType;
 import com.globaltrade.logistics.core.exception.CustomerServiceException;
 import com.globaltrade.logistics.core.service.AdminCustomerService;
-import com.globaltrade.logistics.ejb.repository.AdminInventoryRepository;
+import com.globaltrade.logistics.ejb.repository.AdminCustomerRepository;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
@@ -36,7 +36,7 @@ public class AdminCustomerServiceBean implements AdminCustomerService {
             throw new CustomerServiceException("Page cannot be negative");
         }
         if (size < 1 || size > 100) {
-            throw new IllegalArgumentException("Size must be between 1 and 100");
+            throw new CustomerServiceException("Size must be between 1 and 100");
         }
 
         List<Customer> customers = adminCustomerRepository.findCustomers(search, companyId, customerType,

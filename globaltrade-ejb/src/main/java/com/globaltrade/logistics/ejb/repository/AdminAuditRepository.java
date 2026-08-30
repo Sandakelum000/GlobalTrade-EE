@@ -35,6 +35,25 @@ public class AdminAuditRepository {
 
     }
 
+    public Optional<AuditLog> findByIdWithDetails(UUID auditId) {
+        List<AuditLog> result =
+                entityManager.createQuery("SELECT a FROM AuditLog a LEFT JOIN FETCH a.user u " +
+                                "WHERE a.id = :id", AuditLog.class)
+                        .setParameter("id", auditId)
+                        .setMaxResults(1)
+                        .getResultList();
+
+        return result.stream().findFirst();
+    }
+
+
+    public List<User> findAuditUsers() {
+        return entityManager.createQuery("SELECT DISTINCT u FROM AuditLog a " +
+                        "JOIN a.user u ORDER BY u.username ASC", User.class)
+                .getResultList();
+    }
+
+
     public List<AuditLog> findAudits(String search, AuditAction action, UUID userId, LocalDateTime from,
                                      LocalDateTime to, String sortBy, String direction, int page, int size) {
 
@@ -154,34 +173,5 @@ public class AdminAuditRepository {
         parameters.forEach(query::setParameter);
 
         return query.getSingleResult();
-    }
-
-
-    public Optional<AuditLog> findByIdWithDetails(UUID auditId) {
-
-        List<AuditLog> result =
-                entityManager.createQuery("""
-                        SELECT a
-                        FROM AuditLog a
-                        LEFT JOIN FETCH a.user u
-                        WHERE a.id = :id
-                        """, AuditLog.class)
-                        .setParameter("id", auditId)
-                        .setMaxResults(1)
-                        .getResultList();
-
-        return result.stream().findFirst();
-    }
-
-
-    public List<User> findAuditUsers() {
-
-        return entityManager.createQuery("""
-                SELECT DISTINCT u
-                FROM AuditLog a
-                JOIN a.user u
-                ORDER BY u.username ASC
-                """, User.class)
-                .getResultList();
     }
 }

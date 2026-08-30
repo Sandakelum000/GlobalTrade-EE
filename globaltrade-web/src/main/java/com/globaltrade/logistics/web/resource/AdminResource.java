@@ -70,6 +70,7 @@ public class AdminResource {
 
     @GET
     @Path("/shipments")
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     public Response getShipments(
             @QueryParam("search")
             String search,
@@ -97,6 +98,7 @@ public class AdminResource {
 
     @GET
     @Path("shipments/{shipmentId}")
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     public Response getShipmentDetails(@PathParam("shipmentId") UUID shipmentId) {
         return Response.ok(adminShipmentService.getShipmentDetails(shipmentId)).build();
     }

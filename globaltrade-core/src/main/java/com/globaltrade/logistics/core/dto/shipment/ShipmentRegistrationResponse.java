@@ -2,6 +2,7 @@ package com.globaltrade.logistics.core.dto.shipment;
 
 import com.globaltrade.logistics.core.entity.common.Address;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
+import com.globaltrade.logistics.core.service.AuditableResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,5 +26,9 @@ public record ShipmentRegistrationResponse(
         BigDecimal routeEstimatedHours,
         Integer routeRiskScore,
         String routeName
-) {
+) implements AuditableResponse {
+    @Override
+    public UUID getEntityId() {
+        return id;
+    }
 }

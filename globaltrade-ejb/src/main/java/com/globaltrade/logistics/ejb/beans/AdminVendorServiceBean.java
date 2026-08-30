@@ -29,7 +29,7 @@ public class AdminVendorServiceBean implements AdminVendorService {
     private VendorRepository vendorRepository;
 
     @Override
-    @RolesAllowed("ADMIN")
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageResponse<AdminVendorListResponse> getVendors(String search, UUID companyId, VendorStatus status, String sortBy, String direction, int page, int size) {
         if (page < 0) {
@@ -61,7 +61,7 @@ public class AdminVendorServiceBean implements AdminVendorService {
     }
 
     @Override
-    @RolesAllowed("ADMIN")
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     @Transactional(Transactional.TxType.SUPPORTS)
     public AdminVendorDetailsResponse getVendorDetails(UUID vendorId) {
         Optional<Vendor> optionalVendor = adminVendorRepository.findByIdWithDetails(vendorId);

@@ -10,6 +10,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -100,6 +101,15 @@ public class OrderRepository {
                 ))
                 .toList();
     }
+
+    public List<Order> findExpiredUnpaidOrders(LocalDateTime expiryTime){
+        return entityManager.createQuery("SELECT o FROM Order o WHERE o.orderStatus =:status " +
+                "AND o.orderDate <=:expiryTime", Order.class)
+                .setParameter("status",OrderStatus.PENDING)
+                .setParameter("expiryTime",expiryTime)
+                .getResultList();
+    }
+
 
     public List<RecentOrderResponse> findRecentOrders(int limit) {
         return entityManager.createQuery("SELECT o FROM Order o " +

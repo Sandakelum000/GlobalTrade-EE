@@ -10,7 +10,9 @@ package com.globaltrade.logistics.core.entity.audit;public enum AuditAction {
     CANCEL,
     SHIP,
     DELIVER,
-    SHIPMENT_OVERDUE
+    SHIPMENT_OVERDUE,
+    LOW_STOCK,
+    PAYMENT,
 }
 
 

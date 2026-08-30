@@ -7,9 +7,11 @@ import com.globaltrade.logistics.core.exception.ProductAlreadyExistsException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.ProductService;
 import com.globaltrade.logistics.ejb.repository.ProductRepository;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.springframework.context.annotation.Role;
 import org.springframework.lang.NonNull;
 
 @Stateless
@@ -26,6 +28,7 @@ public class ProductServiceBean implements ProductService {
     private NumberSequenceService numberSequenceService;
 
     @Override
+    @RolesAllowed({"ADMIN"})
     @Transactional(Transactional.TxType.REQUIRED)
     public ProductRegistrationResponse registerProduct(@NonNull ProductRegistrationRequest request) {
 

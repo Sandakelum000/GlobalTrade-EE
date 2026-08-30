@@ -9,7 +9,10 @@ import com.globaltrade.logistics.core.entity.order.OrderStatus;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
 import com.globaltrade.logistics.core.service.AdminDashboardService;
 import com.globaltrade.logistics.ejb.repository.*;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.ejb.TransactionAttributeType;
 import jakarta.inject.Inject;
 
 import java.util.List;
@@ -17,8 +20,6 @@ import java.util.logging.Logger;
 
 @Stateless
 public class AdminDashboardServiceBean implements AdminDashboardService {
-    private static final Logger logger = Logger.getLogger(AdminDashboardServiceBean.class.getName());
-
     @Inject
     private OrderRepository orderRepository;
     @Inject
@@ -37,6 +38,8 @@ public class AdminDashboardServiceBean implements AdminDashboardService {
     private PaymentRepository paymentRepository;
 
     @Override
+    @TransactionAttribute(TransactionAttributeType.SUPPORTS)
+    @RolesAllowed({"ADMIN"})
     public AdminDashboardResponse getDashboard() {
         AdminDashboardSummaryResponse summary =
                 new AdminDashboardSummaryResponse(

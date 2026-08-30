@@ -16,6 +16,7 @@ import com.globaltrade.logistics.ejb.repository.CustomerRepository;
 import com.globaltrade.logistics.ejb.repository.RoleRepository;
 import com.globaltrade.logistics.ejb.repository.UserRepository;
 import com.globaltrade.logistics.ejb.security.PasswordService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -24,6 +25,7 @@ import org.springframework.lang.NonNull;
 import java.util.UUID;
 
 @Stateless
+@RolesAllowed({"ADMIN","CUSTOMER"})
 public class CustomerServiceBean implements CustomerService {
 
     private static final String SEQUENCE_KEY = "CUSTOMER";

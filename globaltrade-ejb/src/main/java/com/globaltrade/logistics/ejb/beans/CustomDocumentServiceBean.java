@@ -7,6 +7,7 @@ import com.globaltrade.logistics.core.entity.order.shipment.CustomsDocument;
 import com.globaltrade.logistics.core.entity.order.shipment.CustomsDocumentType;
 import com.globaltrade.logistics.core.entity.order.shipment.Shipment;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
+import com.globaltrade.logistics.core.exception.CustomDocumentException;
 import com.globaltrade.logistics.core.service.CustomDocumentService;
 import com.globaltrade.logistics.ejb.repository.CustomDocumentRepository;
 import com.globaltrade.logistics.ejb.repository.ShipmentRepository;
@@ -39,11 +40,11 @@ public class CustomDocumentServiceBean implements CustomDocumentService {
     @Transactional(Transactional.TxType.REQUIRED)
     public CustomsDocumentResponse createDocument(CustomsDocumentRegistrationRequest request) {
         Shipment shipment = shipmentRepository.findById(request.shipmentId())
-                .orElseThrow(() -> new IllegalArgumentException("shipment id not found: " + request.shipmentId()));
+                .orElseThrow(() -> new CustomDocumentException("shipment id not found: " + request.shipmentId()));
 
 
         if (shipment.getStatus() == ShipmentStatus.CANCELLED) {
-            throw new IllegalStateException("This shipment is already cancelled");
+            throw new CustomDocumentException("This shipment is already cancelled");
         }
 
         CustomsDocument customsDocument = CustomsDocument.builder()
@@ -60,7 +61,7 @@ public class CustomDocumentServiceBean implements CustomDocumentService {
     }
 
     @Override
-    @RolesAllowed({"ADMIN", "CUSTOMER"})
+    @RolesAllowed({"ADMIN"})
     @Transactional(Transactional.TxType.SUPPORTS)
     public CustomsDocumentResponse findById(UUID id) {
         CustomsDocument document = customDocumentRepository.findById(id)
@@ -69,7 +70,7 @@ public class CustomDocumentServiceBean implements CustomDocumentService {
     }
 
     @Override
-    @RolesAllowed({"ADMIN", "CUSTOMER"})
+    @RolesAllowed({"ADMIN"})
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<CustomsDocumentResponse> findByShipment(UUID shipmentId) {
         return customDocumentRepository.findByShipmentIdDESC(shipmentId)

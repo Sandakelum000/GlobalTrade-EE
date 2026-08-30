@@ -4,6 +4,7 @@ import com.globaltrade.logistics.core.annotation.Audited;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.core.service.AdminCustomerService;
 import com.globaltrade.logistics.core.service.AuditLogService;
+import com.globaltrade.logistics.core.service.AuditableResponse;
 import com.globaltrade.logistics.ejb.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;
@@ -46,7 +47,7 @@ public class AuditInterceptor {
             result = context.proceed();
             return result;
         } finally {
-            if (result instanceof AdminCustomerService.AuditableResponse response) {
+            if (result instanceof AuditableResponse response) {
                 UUID entityId = response.getEntityId();
 
                 Audited audited = context.getMethod().getAnnotation(Audited.class);

@@ -3,9 +3,11 @@ package com.globaltrade.logistics.web.resource;
 import com.globaltrade.logistics.core.dto.login.LoginRequest;
 import com.globaltrade.logistics.core.dto.login.RefreshRequest;
 import com.globaltrade.logistics.core.entity.security.User;
+import com.globaltrade.logistics.core.service.AuditLogService;
 import com.globaltrade.logistics.ejb.security.JWTService;
 import com.globaltrade.logistics.ejb.security.RefreshTokenService;
 
+import jakarta.ejb.EJB;
 import jakarta.inject.Inject;
 import jakarta.security.enterprise.credential.UsernamePasswordCredential;
 import jakarta.security.enterprise.identitystore.CredentialValidationResult;
@@ -13,8 +15,10 @@ import jakarta.security.enterprise.identitystore.IdentityStoreHandler;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
@@ -28,12 +32,14 @@ public class AuthResource {
 
     @Inject
     private IdentityStoreHandler identityStoreHandler;
-
     @Inject
     private JWTService jwtService;
-
     @Inject
     private RefreshTokenService refreshTokenService;
+    @EJB
+    private AuditLogService  auditLogService;
+    @Context
+    private SecurityContext securityContext;
 
     @POST
     @Path("/login")
@@ -52,6 +58,8 @@ public class AuthResource {
         try {
             String accessToken = jwtService.generateAccessToken(username, roles);
             String refreshToken = refreshTokenService.createByUsername(username);
+
+            auditLogService.logLogin(username);
 
             return Response.ok(
                     Map.of("access", accessToken,
@@ -100,6 +108,19 @@ public class AuthResource {
                     .entity(Map.of("error", "Invalid or expired refresh token"))
                     .build();
         }
+    }
+
+    @POST
+    @Path("/logout")
+    public Response logout() {
+        String username = securityContext.getUserPrincipal() != null
+                ? securityContext.getUserPrincipal().getName()
+                : null;
+        if (username != null) {auditLogService.logLogout(username);}
+
+        return Response.ok(
+                Map.of("message", "Logged out successfully")
+        ).build();
     }
 
 }

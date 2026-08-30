@@ -28,19 +28,14 @@ public class VendorServiceBean implements VendorService {
 
     @Inject
     private VendorRepository vendorRepository;
-
     @Inject
     private CompanyRepository companyRepository;
-
     @Inject
     private UserRepository userRepository;
-
     @Inject
     private PasswordService passwordService;
-
     @Inject
     private RoleRepository roleRepository;
-
     @Inject
     private NumberSequenceService numberSequenceService;
 

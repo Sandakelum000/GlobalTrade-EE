@@ -17,6 +17,7 @@ import com.globaltrade.logistics.core.entity.order.shipment.ShipmentItemStatus;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
 import com.globaltrade.logistics.core.exception.OrderCancellationException;
+import com.globaltrade.logistics.core.exception.OrderCreationException;
 import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.OrderService;
@@ -61,16 +62,16 @@ public class OrderServiceBean implements OrderService {
     @Transactional(Transactional.TxType.REQUIRED)
     public OrderRegistrationResponse createOrder(OrderRegistrationRequest request,UUID customerId) {
         if (request == null) {
-            throw new IllegalArgumentException("Order Request is null");
+            throw new OrderCreationException("Order Request is null");
         }
         if (customerId == null) {
-            throw new IllegalArgumentException("Customer ID is required");
+            throw new OrderCreationException("Customer ID is required");
         }
         if (request.items() == null || request.items().isEmpty()) {
-            throw new IllegalArgumentException("Order must have at least one item");
+            throw new OrderCreationException("Order must have at least one item");
         }
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new IllegalArgumentException("Customer number not found: " + customerId));
+                .orElseThrow(() -> new OrderCreationException("Customer number not found: " + customerId));
 
         String nextOrderNumber = numberSequenceService.next(SEQUENCE_KEY, PREFIX, WIDTH);
 
@@ -87,30 +88,30 @@ public class OrderServiceBean implements OrderService {
 
         for (OrderItemRequest itemRequest : request.items()) {
             if (itemRequest == null) {
-                throw new IllegalArgumentException("Order item cannot be null");
+                throw new OrderCreationException("Order item cannot be null");
             }
             if (itemRequest.inventoryId() == null) {
-                throw new IllegalArgumentException("Inventory ID is required");
+                throw new OrderCreationException("Inventory ID is required");
             }
             if (itemRequest.quantity() == null || itemRequest.quantity() <= 0) {
-                throw new IllegalArgumentException("Order item quantity must be greater than zero");
+                throw new OrderCreationException("Order item quantity must be greater than zero");
             }
 
             Inventory inventory = inventoryRepository
                     .findByIdForUpdate(itemRequest.inventoryId())
-                    .orElseThrow(() -> new IllegalArgumentException("Inventory not found: " + itemRequest.inventoryId()));
+                    .orElseThrow(() -> new OrderCreationException("Inventory not found: " + itemRequest.inventoryId()));
 
             int reqQuantity = itemRequest.quantity();
 
             if (reqQuantity > inventory.getAvailableQuantity()) {
-                throw new IllegalStateException("Insufficient quantity for product:" + inventory.getProduct().getProductNumber());
+                throw new OrderCreationException("Insufficient quantity for product:" + inventory.getProduct().getProductNumber());
             }
 
             inventory.reserveStock(reqQuantity); // reserve stock
 
             BigDecimal unitPrice = inventory.getSellingPrice();
             if (unitPrice == null) {
-                throw new IllegalStateException("Selling price is not configured for inventory: " + inventory.getInventoryNumber());
+                throw new OrderCreationException("Selling price is not configured for inventory: " + inventory.getInventoryNumber());
             }
 
             BigDecimal itemTotal = unitPrice.multiply(BigDecimal.valueOf(reqQuantity));

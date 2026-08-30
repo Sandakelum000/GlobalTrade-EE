@@ -55,6 +55,7 @@ public class AdminEmployeeServiceBean implements AdminEmployeeService {
 
     @Override
     @Transactional(Transactional.TxType.REQUIRED)
+    @RolesAllowed({"ADMIN"})
     public EmployeeRegistrationResponse registerEmployee(EmployeeRegistrationRequest request) {
 
         if (userRepository.findByUsername(request.username()).isPresent()) {

@@ -35,7 +35,7 @@ public class InventoryAlertServiceBean implements InventoryAlertService {
 
         AuditLog auditLog = AuditLog.builder()
                 .user(null)
-                .action(AuditAction.UPDATE)
+                .action(AuditAction.LOW_STOCK)
                 .entityType("Inventory")
                 .entityId(record.inventoryNumber())
                 .actionTimestamp(LocalDateTime.now())

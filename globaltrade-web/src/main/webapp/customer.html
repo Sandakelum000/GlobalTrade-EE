@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Portal | GlobalTrade Logistics</title>
+
+    <!-- Modern Typography: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                        body: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PayHere JavaScript SDK (Sandbox) -->
+    <script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex font-sans antialiased overflow-x-hidden">
+
+<!-- Left Navigation Sidebar -->
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 left-0 z-30 shadow-xl border-r border-slate-800 transition-all duration-300">
+
+    <!-- Brand Header -->
+    <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-800/80 bg-slate-950/40">
+        <div class="w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-extrabold shadow-lg shadow-indigo-500/20">
+            <i class="fa-solid fa-boxes-packing text-base"></i>
+        </div>
+        <div>
+            <span class="text-sm font-black text-white block leading-tight tracking-tight">GLOBALTRADE</span>
+            <span class="text-[10px] font-semibold tracking-wider text-indigo-400 block uppercase">Customer Portal</span>
+        </div>
+    </div>
+
+    <!-- Main Navigation Links -->
+    <nav class="flex-1 px-3 py-6 space-y-1.5 font-medium text-xs">
+        <button data-target="secDashboard" class="sidebar-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-800/60 hover:text-white">
+            <i class="fa-solid fa-chart-pie text-sm"></i>
+            <span>Dashboard</span>
+        </button>
+        <button data-target="secInventory" class="sidebar-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-800/60 hover:text-white">
+            <i class="fa-solid fa-store text-sm"></i>
+            <span>Inventory Marketplace</span>
+        </button>
+        <button data-target="secOrders" class="sidebar-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-800/60 hover:text-white">
+            <i class="fa-solid fa-box-archive text-sm"></i>
+            <span>Orders</span>
+        </button>
+        <button data-target="secShipments" class="sidebar-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-800/60 hover:text-white">
+            <i class="fa-solid fa-truck-fast text-sm"></i>
+            <span>Shipments</span>
+        </button>
+        <button data-target="secPayments" class="sidebar-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-800/60 hover:text-white">
+            <i class="fa-solid fa-receipt text-sm"></i>
+            <span>Payment History</span>
+        </button>
+        <button data-target="secProfile" class="sidebar-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-800/60 hover:text-white">
+            <i class="fa-solid fa-user-gear text-sm"></i>
+            <span>Profile Settings</span>
+        </button>
+    </nav>
+
+    <!-- Sidebar Footer & Sign Out -->
+    <div class="p-4 border-t border-slate-800/80 bg-slate-950/20">
+        <button id="signOutBtn" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all">
+            <i class="fa-solid fa-right-from-bracket text-sm"></i>
+            <span>Sign Out</span>
+        </button>
+    </div>
+</aside>
+
+<!-- Main Outer Wrapper -->
+<div class="flex-1 ml-64 flex flex-col min-w-0">
+
+    <!-- Top Header Navigation Bar -->
+    <header class="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-8 shadow-sm">
+        <div>
+            <h1 id="currentPageTitle" class="text-base font-extrabold text-slate-900 tracking-tight">Dashboard Overview</h1>
+            <p id="currentPageSubtitle" class="text-xs text-slate-500 font-body">Real-time logistics telemetry and operational status</p>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button id="makeOrderBtn" class="bg-indigo-600 text-white hover:bg-indigo-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 flex items-center gap-2 border border-indigo-500/30">
+                <i class="fa-solid fa-cart-plus text-sm"></i>
+                <span>Explore Marketplace</span>
+            </button>
+
+            <div class="h-6 w-px bg-slate-200"></div>
+
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-black text-xs uppercase shadow-md">
+                    <span id="userAvatar">C</span>
+                </div>
+                <div class="text-left hidden sm:block">
+                    <span id="usernameDisplay" class="text-xs font-bold text-slate-900 block leading-tight">Customer</span>
+                    <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active Session
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-8 space-y-8">
+
+        <!-- Global Alert Container -->
+        <div id="dashAlert" class="hidden p-4 rounded-xl text-xs font-medium border flex items-center gap-3 shadow-md transition-all">
+            <i id="dashAlertIcon" class="fa-solid text-base"></i>
+            <span id="dashAlertMessage" class="flex-1"></span>
+        </div>
+
+        <!-- Global Spinner Loader -->
+        <div id="dashLoader" class="hidden flex flex-col justify-center items-center py-16 text-slate-500 text-xs">
+            <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
+            <span class="font-semibold text-slate-700">Syncing platform metrics...</span>
+        </div>
+
+        <!-- SECTION 1: DASHBOARD MAIN -->
+        <section id="secDashboard" class="section-pane hidden space-y-8">
+            <!-- Hero Card + Metric Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+
+                <!-- HERO CARD: Total Spend -->
+                <div class="sm:col-span-2 p-6 bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl shadow-xl border border-indigo-800/40 relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div>
+                        <div class="flex items-center justify-between text-indigo-200 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Total Lifetime Spend</span>
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-300">
+                                <i class="fa-solid fa-wallet text-sm"></i>
+                            </div>
+                        </div>
+                        <span id="metricTotalSpent" class="text-3xl font-black text-white tracking-tight block truncate">$0.00</span>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-indigo-800/50 flex items-center justify-between text-[11px] text-indigo-200/80">
+                        <span>Verified Account Ledger</span>
+                        <span class="font-semibold text-emerald-400 inline-flex items-center gap-1"><i class="fa-solid fa-shield-check text-xs"></i> SECURE</span>
+                    </div>
+                </div>
+
+                <div class="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center justify-between text-slate-400 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Orders</span>
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+                            <i class="fa-solid fa-boxes-packing text-sm"></i>
+                        </div>
+                    </div>
+                    <span id="metricTotalOrders" class="text-2xl font-black text-slate-900 block">0</span>
+                </div>
+
+                <div class="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center justify-between text-amber-500 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Pending</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                            <i class="fa-solid fa-clock text-sm"></i>
+                        </div>
+                    </div>
+                    <span id="metricPendingOrders" class="text-2xl font-black text-amber-600 block">0</span>
+                </div>
+
+                <div class="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center justify-between text-blue-500 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Active Freight</span>
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                            <i class="fa-solid fa-truck-arrow-right text-sm"></i>
+                        </div>
+                    </div>
+                    <span id="metricActiveShipments" class="text-2xl font-black text-blue-600 block">0</span>
+                </div>
+
+                <div class="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center justify-between text-emerald-500 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Delivered</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <i class="fa-solid fa-box-open text-sm"></i>
+                        </div>
+                    </div>
+                    <span id="metricDeliveredShipments" class="text-2xl font-black text-emerald-600 block">0</span>
+                </div>
+            </div>
+
+            <!-- Dashboard Charts Area -->
+            <div class="grid lg:grid-cols-2 gap-6">
+                <div class="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Monthly Order Volume</h3>
+                        <span class="text-xs text-indigo-600 font-semibold bg-indigo-50 px-2.5 py-1 rounded-lg">Orders Trend</span>
+                    </div>
+                    <div class="h-64 relative"><canvas id="monthlyOrdersChart"></canvas></div>
+                </div>
+
+                <div class="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Monthly Expenditure ($)</h3>
+                        <span class="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">Spending Analytics</span>
+                    </div>
+                    <div class="h-64 relative"><canvas id="monthlySpendingChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: INVENTORY & MARKETPLACE -->
+        <section id="secInventory" class="section-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+                <!-- Main Marketplace Catalog -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Inventory Marketplace</h3>
+                            <p class="text-xs text-slate-500 font-body">Browse available warehouse products and configure custom order lines</p>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input type="text" id="marketplaceSearchInput" placeholder="Search catalog..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition-all">
+                            </div>
+                            <button id="refreshInventoryBtn" class="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors" title="Refresh Catalog">
+                                <i class="fa-solid fa-rotate-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Marketplace Grid Container -->
+                    <div id="marketplaceGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Dynamic Marketplace Cards -->
+                    </div>
+                </div>
+
+                <!-- Right Column: Interactive Order Cart -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 space-y-6 sticky top-24">
+                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
+                        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-cart-shopping text-indigo-600"></i> Order Cart
+                        </h3>
+                        <span id="cartCountBadge" class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">0 Items</span>
+                    </div>
+
+                    <div id="cartItemsContainer" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        <div id="emptyCartNotice" class="text-center py-10 text-slate-400 text-xs font-body">
+                            <i class="fa-solid fa-basket-shopping text-3xl mb-3 text-slate-300 block"></i>
+                            Your order cart is empty.<br>Select items from the marketplace catalog to proceed.
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 space-y-2 text-xs">
+                        <div class="flex justify-between text-slate-600">
+                            <span>Subtotal</span>
+                            <span id="cartSubtotal" class="font-bold text-slate-900">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Fulfillment & Handling</span>
+                            <span class="font-bold text-emerald-600">Calculated on Checkout</span>
+                        </div>
+                        <div class="flex justify-between text-base font-black text-slate-900 pt-3 border-t border-slate-100">
+                            <span>Grand Total</span>
+                            <span id="cartGrandTotal" class="text-indigo-600">$0.00</span>
+                        </div>
+                    </div>
+
+                    <button id="placeOrderSubmitBtn" disabled class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Submit Purchase Order</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: ORDERS PANE -->
+        <section id="secOrders" class="section-pane hidden space-y-6">
+            <!-- Order Status Summary Cards -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Order Status Metrics</h3>
+                <div id="orderStatusCardsContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <!-- Dynamic Status Cards -->
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Customer Order History</h3>
+                        <p class="text-xs text-slate-500 font-body">Complete archive of past and current orders</p>
+                    </div>
+                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">Live Records</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 border-b border-slate-200/80">
+                            <th class="py-3.5 px-6">Order Reference</th>
+                            <th class="py-3.5 px-6">Placed Date</th>
+                            <th class="py-3.5 px-6">Total Amount</th>
+                            <th class="py-3.5 px-6">Order Status</th>
+                            <th class="py-3.5 px-6 text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="recentOrdersTableBody" class="divide-y divide-slate-100 text-xs text-slate-700 font-body">
+                        <!-- Dynamic Order Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: SHIPMENTS PANE -->
+        <section id="secShipments" class="section-pane hidden space-y-6">
+            <!-- Shipment Status Summary Cards -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Freight & Shipment Metrics</h3>
+                <div id="shipmentStatusCardsContainer" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <!-- Dynamic Shipment Status Cards -->
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Active Freight Shipments</h3>
+                        <p class="text-xs text-slate-500 font-body">Real-time GPS dispatch details and estimated delivery times</p>
+                    </div>
+                    <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-xs"></i> GPS Monitored
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 border-b border-slate-200/80">
+                            <th class="py-3.5 px-6">Shipment & Order</th>
+                            <th class="py-3.5 px-6">Warehouse Hub</th>
+                            <th class="py-3.5 px-6">Route & Distance</th>
+                            <th class="py-3.5 px-6">Freight Status</th>
+                            <th class="py-3.5 px-6">Est. Delivery</th>
+                            <th class="py-3.5 px-6">Current Location</th>
+                        </tr>
+                        </thead>
+                        <tbody id="shipmentsTableBody" class="divide-y divide-slate-100 text-xs text-slate-700 font-body">
+                        <!-- Dynamic Shipment Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: PAYMENT HISTORY -->
+        <section id="secPayments" class="section-pane hidden space-y-4">
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-8 text-center max-w-lg mx-auto shadow-sm">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-receipt text-xl"></i>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900 mb-1">Payment Receipts & Ledger</h3>
+                <p class="text-xs text-slate-500 font-body leading-relaxed">View complete payment audit trails and transaction receipts verified by PayHere SDK.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 6: PROFILE PANE -->
+        <section id="secProfile" class="section-pane hidden space-y-4">
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-8 max-w-xl mx-auto shadow-sm space-y-6 text-xs">
+                <div class="flex items-center gap-4 border-b border-slate-100 pb-5">
+                    <div class="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-violet-600 text-white rounded-2xl flex items-center justify-center text-2xl font-black shadow-lg shadow-indigo-500/20">
+                        <span id="profileAvatar">C</span>
+                    </div>
+                    <div>
+                        <h3 id="profileUsername" class="text-base font-extrabold text-slate-900">Customer Account</h3>
+                        <span class="text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded text-[10px]">CUSTOMER ROLE</span>
+                    </div>
+                </div>
+                <div class="space-y-3 font-body">
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="text-slate-500">Authentication Context:</span>
+                        <span class="font-bold text-slate-800">Bearer JWT Validated</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="text-slate-500">Security Status:</span>
+                        <span class="font-bold text-emerald-600 inline-flex items-center gap-1"><i class="fa-solid fa-circle-check text-xs"></i> Encrypted</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Product Quantity Selection Modal -->
+<div id="productModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl p-6 relative space-y-5 font-sans">
+        <button id="closeProductModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-900 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center transition-colors">
+            <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+        <div>
+            <span class="text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded inline-block mb-2">Configure Line Item</span>
+            <h3 id="modalProductName" class="text-lg font-extrabold text-slate-900">Product Title</h3>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-xl space-y-2 text-xs border border-slate-100">
+            <div class="flex justify-between">
+                <span class="text-slate-500">Fulfillment Hub:</span>
+                <span id="modalWarehouseName" class="font-bold text-slate-900">Location</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-500">Stock Availability:</span>
+                <span id="modalAvailableQty" class="font-bold text-slate-900">0</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-500">Unit Selling Price:</span>
+                <span id="modalSellingPrice" class="font-extrabold text-indigo-600">$0.00</span>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label class="block text-xs font-bold uppercase text-slate-700">Quantity Selection</label>
+            <div class="flex items-center gap-3">
+                <button id="modalQtyMinus" type="button" class="w-10 h-10 border border-slate-200 rounded-xl text-slate-800 font-bold text-lg hover:bg-slate-100 flex items-center justify-center transition-colors">-</button>
+                <input type="number" id="modalQtyInput" value="1" min="1" step="1" class="w-full text-center bg-slate-50 border border-slate-200 rounded-xl py-2.5 text-sm font-black focus:outline-none focus:border-indigo-500 transition-all">
+                <button id="modalQtyPlus" type="button" class="w-10 h-10 border border-slate-200 rounded-xl text-slate-800 font-bold text-lg hover:bg-slate-100 flex items-center justify-center transition-colors">+</button>
+            </div>
+            <!-- Validation Error Feedback Message -->
+            <p id="modalQtyError" class="hidden text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="modalQtyErrorText">Invalid quantity specified.</span>
+            </p>
+        </div>
+
+        <button id="modalAddToCartBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+            <i class="fa-solid fa-cart-plus"></i>
+            <span>Add To Order Cart</span>
+        </button>
+    </div>
+</div>
+
+<script src="assets/js/customer.js"></script>
+</body>
+</html>

@@ -12,6 +12,7 @@ import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
 import com.globaltrade.logistics.core.entity.order.shipment.tracking.ShipmentTracking;
 import com.globaltrade.logistics.core.entity.product.Product;
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
+import com.globaltrade.logistics.core.exception.AdminShipmentServiceException;
 import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.AdminShipmentService;
 import com.globaltrade.logistics.ejb.repository.AdminShipmentRepository;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Stateless
+@RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
 public class AdminShipmentServiceBean implements AdminShipmentService {
 
     @Inject
@@ -36,15 +38,14 @@ public class AdminShipmentServiceBean implements AdminShipmentService {
     private ShipmentTrackingRepository shipmentTrackingRepository;
 
     @Override
-    @RolesAllowed("ADMIN")
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageResponse<AdminShipmentListResponse> getShipments(String search, ShipmentStatus status, UUID warehouseId, String sortBy, String direction, int page, int size) {
         if(page < 0){
-            throw new IllegalArgumentException("page cannot be negative");
+            throw new AdminShipmentServiceException("page cannot be negative");
         }
 
         if(size < 1 || size > 100){
-            throw new IllegalArgumentException("size must be between 1 and 100");
+            throw new AdminShipmentServiceException("size must be between 1 and 100");
         }
 
         List<Shipment> shipments =
@@ -69,16 +70,15 @@ public class AdminShipmentServiceBean implements AdminShipmentService {
     }
 
     @Override
-    @RolesAllowed("ADMIN")
     @Transactional(Transactional.TxType.SUPPORTS)
     public AdminShipmentDetailsResponse getShipmentDetails(UUID shipmentId) {
         if (shipmentId == null) {
-            throw new IllegalArgumentException("Shipment ID cannot be null");
+            throw new AdminShipmentServiceException("Shipment ID cannot be null");
         }
 
         Shipment shipment =
                 shipmentRepository.findByShipmentIdWithItems(shipmentId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Shipment " + shipmentId + " not found"));
+                        .orElseThrow(() -> new AdminShipmentServiceException("Shipment " + shipmentId + " not found"));
 
         List<AdminShipmentItemResponse> items = shipment.getItems()
                         .stream()

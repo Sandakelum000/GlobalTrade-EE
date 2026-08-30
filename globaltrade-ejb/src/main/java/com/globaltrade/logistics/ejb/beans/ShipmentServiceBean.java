@@ -14,8 +14,10 @@ import com.globaltrade.logistics.core.entity.order.shipment.tracking.ShipmentTra
 import com.globaltrade.logistics.core.entity.order.shipment.tracking.TrackingStatus;
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
 import com.globaltrade.logistics.core.entity.warehouse.Warehouse;
+import com.globaltrade.logistics.core.exception.ShipmentCreationException;
 import com.globaltrade.logistics.core.exception.ShipmentShippingException;
 import com.globaltrade.logistics.core.exception.ShipmentTrackingException;
+import com.globaltrade.logistics.core.service.AuditLogService;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.ShipmentService;
 import com.globaltrade.logistics.ejb.interceptor.AuditInterceptor;
@@ -33,10 +35,12 @@ import java.util.*;
 @Stateless
 @Audited
 @Interceptors(AuditInterceptor.class)
+@RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
 public class ShipmentServiceBean implements ShipmentService {
     private static final String SEQUENCE_KEY = "SHIPMENT";
     private static final String PREFIX = "SHI";
     private static final int WIDTH = 3;
+    private static final String ENTITY_NAME = "Shipment";
 
     @Inject
     private OrderRepository orderRepository;
@@ -50,39 +54,43 @@ public class ShipmentServiceBean implements ShipmentService {
     private ShipmentItemRepository shipmentItemRepository;
     @Inject
     private ShipmentTrackingRepository shipmentTrackingRepository;
+    @Inject
+    private AuditLogService auditLogService;
 
     @Override
-    @Audited(
-            action = AuditAction.CREATE,
-            entity = "Shipment"
-    )
     @Transactional(Transactional.TxType.REQUIRED)
-    public void createShipmentsForOrder(UUID orderId) {
+    public ShipmentCreationResponse createShipmentsForOrder(UUID orderId) {
 
         if (orderId == null) {
-            throw new IllegalArgumentException("Order ID cannot be null");
-        }
-        if (shipmentRepository.existsByOrderId(orderId)) {
-            shipmentRepository.findByOrderId(orderId)
-                    .stream()
-                    .map(this::toResponse)
-                    .toList();
-            return;
+            throw new ShipmentCreationException("Order ID cannot be null");
         }
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order ID " + orderId + " not found"));
+                .orElseThrow(() -> new ShipmentCreationException("Order ID " + orderId + " not found"));
 
+        if (shipmentRepository.existsByOrderId(orderId)) {
+            List<ShipmentRegistrationResponse> existingShipments = shipmentRepository.findByOrderId(orderId)
+                    .stream()
+                    .map(this::toResponse)
+                    .toList();
+
+            return new ShipmentCreationResponse(
+                    order.getId(),
+                    order.getOrderNumber(),
+                    existingShipments
+            );
+        }
+        
         if (order.getOrderStatus() != OrderStatus.CONFIRMED) {
-            throw new IllegalStateException("Order " + order.getOrderNumber() + " is not confirmed yet");
+            throw new ShipmentCreationException("Order " + order.getOrderNumber() + " is not confirmed yet");
         }
 
         if (order.getItems() == null || order.getItems().isEmpty()) {
-            throw new IllegalStateException("Order " + order.getOrderNumber() + " has no order items");
+            throw new ShipmentCreationException("Order " + order.getOrderNumber() + " has no order items");
         }
 
         if (order.getShippingAddress() == null) {
-            throw new IllegalStateException("Order " + order.getOrderNumber() + " has no shipping address");
+            throw new ShipmentCreationException("Order " + order.getOrderNumber() + " has no shipping address");
         }
 
 
@@ -94,45 +102,65 @@ public class ShipmentServiceBean implements ShipmentService {
             UUID warehouseId = entry.getKey();
             List<OrderItem> warehouseItems = entry.getValue();
 
-            Warehouse warehouse = warehouseRepository.getWarehouseById(warehouseId)
-                            .orElseThrow(() -> new IllegalArgumentException("Warehouse ID " + warehouseId + " not found"));
+            ShipmentRegistrationResponse response =
+                    createShipmentForWarehouse(order, warehouseId, warehouseItems);
 
-            if (warehouse.getAddress() == null) {
-                throw new IllegalStateException("Warehouse " + warehouse.getName() + " does not have an address");
-            }
-
-            String shipmentNumber = numberSequenceService.next(SEQUENCE_KEY, PREFIX, WIDTH);
-
-            Shipment shipment = Shipment.builder()
-                    .shipmentNumber(shipmentNumber)
-                    .order(order)
-                    .warehouse(warehouse)
-                    .originAddress(warehouse.getAddress())
-                    .destinationAddress(order.getShippingAddress())
-                    .status(ShipmentStatus.PENDING)
-                    .shippedAt(null)
-                    .estimatedDeliveryDate(LocalDateTime.now().plusDays(7))
-                    .deliveredAt(null)
-                    .build();
-
-            shipmentRepository.save(shipment);
-
-            for (OrderItem orderItem : warehouseItems) {
-                ShipmentItem shipmentItem = ShipmentItem.builder()
-                                .shipment(shipment)
-                                .orderItem(orderItem)
-                                .status(ShipmentItemStatus.PENDING)
-                                .build();
-
-                shipmentItemRepository.save(shipmentItem);
-            }
-            responses.add(toResponse(shipment));
+            responses.add(response);
         }
-
+        return new ShipmentCreationResponse(
+                order.getId(),
+                order.getOrderNumber(),
+                responses
+        );
     }
 
+    public ShipmentRegistrationResponse createShipmentForWarehouse(Order order, UUID warehouseId, List<OrderItem> warehouseItems) {
+
+        Warehouse warehouse = warehouseRepository
+                .getWarehouseById(warehouseId)
+                .orElseThrow(() -> new ShipmentCreationException("Warehouse ID " + warehouseId + " not found"));
+
+        if (warehouse.getAddress() == null) {
+            throw new ShipmentCreationException("Warehouse " + warehouse.getName() + " does not have an address");
+        }
+        String shipmentNumber = numberSequenceService.next(SEQUENCE_KEY, PREFIX, WIDTH);
+
+        Shipment shipment = Shipment.builder()
+                .shipmentNumber(shipmentNumber)
+                .order(order)
+                .warehouse(warehouse)
+                .originAddress(warehouse.getAddress())
+                .destinationAddress(order.getShippingAddress())
+                .status(ShipmentStatus.PENDING)
+                .shippedAt(null)
+                .estimatedDeliveryDate(LocalDateTime.now().plusDays(7))
+                .deliveredAt(null)
+                .build();
+
+        shipmentRepository.save(shipment);
+
+        for (OrderItem orderItem : warehouseItems) {
+            ShipmentItem shipmentItem = ShipmentItem.builder()
+                    .shipment(shipment)
+                    .orderItem(orderItem)
+                    .status(ShipmentItemStatus.PENDING)
+                    .build();
+
+            shipmentItemRepository.save(shipmentItem);
+        }
+
+        auditLogService.log(null,AuditAction.CREATE,ENTITY_NAME,shipment.getId().toString(),
+                "Shipment " + shipment.getShipmentNumber()
+                        + " created for order "
+                        + order.getOrderNumber()
+                        + " from warehouse "
+                        + warehouse.getName());
+
+        return toResponse(shipment);
+    }
+
+
     @Override
-    @RolesAllowed({"ADMIN"})
     @Audited(
             action = AuditAction.SHIP,
             entity = "Shipment"
@@ -142,8 +170,8 @@ public class ShipmentServiceBean implements ShipmentService {
         Shipment shipment = shipmentRepository.findById(shipmentId)
                 .orElseThrow(() -> new ShipmentShippingException("Shipment not found id: " + shipmentId));
 
-        if (shipment.getStatus() != ShipmentStatus.PENDING) {
-            throw new ShipmentShippingException("This shipment is not confirmed yet");
+        if (shipment.getStatus() != ShipmentStatus.PROCESSING) {
+            throw new ShipmentShippingException("This shipment has not been processed yet");
         }
 
         //shipment Items belong to shipment
@@ -215,9 +243,6 @@ public class ShipmentServiceBean implements ShipmentService {
         Shipment shipment = shipmentRepository.findById(shipmentId)
                 .orElseThrow(() -> new ShipmentTrackingException("Shipment not found id: " + shipmentId));
 
-        if(shipment.getStatus() == ShipmentStatus.PENDING) {
-            throw new ShipmentTrackingException("This shipment must be shipped before tracking. Shipment id: " + shipmentId);
-        }
 
         if (shipment.getStatus() == ShipmentStatus.CANCELLED) {
             throw new ShipmentTrackingException("Cannot update tracking for a cancelled shipment");
@@ -244,7 +269,7 @@ public class ShipmentServiceBean implements ShipmentService {
         shipment.setStatus(newShipmentStatus); // update shipment status
 
 
-        if (request.status() == TrackingStatus.PICKED_UP || shipment.getShippedAt() == null) {
+        if (request.status() == TrackingStatus.PICKED_UP) {
             shipment.setShippedAt(now);
         }
 
@@ -344,9 +369,7 @@ public class ShipmentServiceBean implements ShipmentService {
 
     private ShipmentStatus convertTrackingStatusToShipmentStatus(TrackingStatus trackingStatus) {
         return switch (trackingStatus) {
-            case LABEL_CREATED -> ShipmentStatus.PENDING;
-
-            case PROCESSING ->  ShipmentStatus.PROCESSING;
+            case LABEL_CREATED, PROCESSING -> ShipmentStatus.PROCESSING;
 
             case PICKED_UP -> ShipmentStatus.SHIPPED;
 

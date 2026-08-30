@@ -1,6 +1,7 @@
 package com.globaltrade.logistics.ejb.beans;
 
 import com.globaltrade.logistics.core.dto.admin.order.*;
+import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.order.Order;
 import com.globaltrade.logistics.core.entity.order.OrderItem;
 import com.globaltrade.logistics.core.entity.order.OrderStatus;
@@ -8,8 +9,10 @@ import com.globaltrade.logistics.core.entity.order.shipment.Shipment;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentItem;
 import com.globaltrade.logistics.core.entity.product.Product;
 import com.globaltrade.logistics.core.entity.warehouse.Inventory;
+import com.globaltrade.logistics.core.exception.AdminOrderServiceException;
 import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.AdminOrderService;
+import com.globaltrade.logistics.core.service.AuditLogService;
 import com.globaltrade.logistics.ejb.repository.AdminOrderRepository;
 import com.globaltrade.logistics.ejb.repository.OrderRepository;
 import com.globaltrade.logistics.ejb.repository.ShipmentRepository;
@@ -21,6 +24,7 @@ import jakarta.ejb.TransactionAttributeType;
 import jakarta.inject.Inject;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,17 +39,19 @@ public class AdminOrderServiceBean implements AdminOrderService {
     private ShipmentRepository shipmentRepository;
     @Inject
     private ShipmentTrackingRepository shipmentTrackingRepository;
+    @Inject
+    private AuditLogService auditLogService;
 
     @Override
     @RolesAllowed("ADMIN")
     @TransactionAttribute(TransactionAttributeType.SUPPORTS)
     public PageResponse<AdminOrderListResponse> getOrders(String search, OrderStatus status, String sortBy, String direction, int page, int size) {
-        if(page < 0){
-            throw new IllegalArgumentException("Page number should be greater than zero");
+        if (page < 0) {
+            throw new AdminOrderServiceException("Page number should be greater than zero");
         }
 
-        if(size < 1 || size > 100){
-            throw new IllegalArgumentException("Size should be between 1 and 100");
+        if (size < 1 || size > 100) {
+            throw new AdminOrderServiceException("Size should be between 1 and 100");
         }
 
         List<Order> orders = adminOrderRepository.findOrders(search, status, sortBy, direction, page, size);
@@ -69,13 +75,15 @@ public class AdminOrderServiceBean implements AdminOrderService {
     }
 
     @Override
+    @RolesAllowed("ADMIN")
+    @TransactionAttribute(TransactionAttributeType.SUPPORTS)
     public AdminOrderDetailsResponse getOrderDetails(UUID orderId) {
         if (orderId == null) {
-            throw new IllegalArgumentException("Order ID cannot be null");
+            throw new AdminOrderServiceException("Order ID cannot be null");
         }
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order " + orderId + " not found"));
+                .orElseThrow(() -> new AdminOrderServiceException("Order " + orderId + " not found"));
 
         AdminCustomerResponse customer =
                 new AdminCustomerResponse(
@@ -111,6 +119,19 @@ public class AdminOrderServiceBean implements AdminOrderService {
                 items,
                 shipments
         );
+    }
+
+    @Override
+    @TransactionAttribute(TransactionAttributeType.REQUIRED)
+    public void cancelExpiredUnpaidOrders() {
+        LocalDateTime now = LocalDateTime.now().minusHours(24);
+
+        List<Order> expiredUnpaidOrders = orderRepository.findExpiredUnpaidOrders(now);
+        for (Order order : expiredUnpaidOrders) {
+            order.setOrderStatus(OrderStatus.CANCELLED);
+            auditLogService.log(null, AuditAction.CANCEL, "Order", order.getId().toString(),
+                    "Order " + order.getOrderNumber() + " has been cancelled due to unpaid order within 24 hours");
+        }
     }
 
     private AdminOrderListResponse toListResponse(Order order) {

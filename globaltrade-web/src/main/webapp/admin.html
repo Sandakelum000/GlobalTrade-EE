@@ -93,6 +93,12 @@
             <i class="fa-solid fa-store text-sm shrink-0"></i>
             <span class="sidebar-text truncate">Vendors</span>
         </button>
+        <button data-target="secAudits"
+                class="sidebar-btn w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg transition-all text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                title="Audit Logs">
+            <i class="fa-solid fa-clipboard-list text-sm shrink-0"></i>
+            <span class="sidebar-text truncate">Audits</span>
+        </button>
     </nav>
 
     <!-- Sidebar Signout -->
@@ -159,62 +165,76 @@
         <section id="secDashboard" class="section-pane space-y-8">
 
             <!-- Metrics Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-                <div class="p-4 bg-black text-white border border-zinc-900 rounded-xl shadow-sm">
-                    <div class="flex items-center justify-between text-zinc-400 mb-2">
-                        <span class="text-xs font-semibold text-zinc-300">Total Revenue</span>
-                        <i class="fa-solid fa-wallet text-emerald-400"></i>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-10 gap-4">
+
+                <div class="p-5 bg-black text-white border border-zinc-900 rounded-xl shadow-md sm:col-span-2 lg:col-span-2 xl:col-span-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-zinc-400 mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-300">Total Revenue</span>
+                        <span class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                <i class="fa-solid fa-wallet text-base"></i>
+            </span>
                     </div>
-                    <span id="metricTotalRevenue" class="text-xl font-bold text-white block truncate">$0.00</span>
+                    <div>
+                        <span id="metricTotalRevenue"
+                              class="text-3xl font-black text-white block truncate tracking-tight">$0.00</span>
+                        <p class="text-[11px] text-zinc-400 mt-1">Gross income across all completed orders</p>
+                    </div>
                 </div>
 
-                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
-                    <div class="flex items-center justify-between text-zinc-500 mb-2">
-                        <span class="text-xs font-semibold">Total Orders</span>
-                        <i class="fa-solid fa-boxes-packing text-blue-600"></i>
+                <div class="p-5 bg-white border border-zinc-200 rounded-xl shadow-md sm:col-span-2 lg:col-span-2 xl:col-span-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-zinc-500 mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-600">Total Orders & Volume</span>
+                        <span class="p-2 bg-blue-500/10 rounded-lg text-blue-600">
+                <i class="fa-solid fa-boxes-packing text-base"></i>
+            </span>
                     </div>
-                    <span id="metricTotalOrders" class="text-xl font-bold text-black block">0</span>
+                    <div>
+                        <span id="metricTotalOrders"
+                              class="text-3xl font-black text-black block tracking-tight">0</span>
+                        <p class="text-[11px] text-zinc-500 mt-1">Total customer purchase receipts generated</p>
+                    </div>
                 </div>
 
-                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm xl:col-span-2">
                     <div class="flex items-center justify-between text-zinc-500 mb-2">
-                        <span class="text-xs font-semibold">Active Freight</span>
+                        <span class="text-xs font-semibold">Active Shipments</span>
                         <i class="fa-solid fa-truck-fast text-purple-600"></i>
                     </div>
-                    <span id="metricActiveShipments" class="text-xl font-bold text-black block">0</span>
+                    <span id="metricActiveShipments" class="text-2xl font-bold text-black block">0</span>
                 </div>
 
-                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm xl:col-span-2">
                     <div class="flex items-center justify-between text-zinc-500 mb-2">
                         <span class="text-xs font-semibold">Total Customers</span>
                         <i class="fa-solid fa-users text-indigo-600"></i>
                     </div>
-                    <span id="metricTotalCustomers" class="text-xl font-bold text-black block">0</span>
+                    <span id="metricTotalCustomers" class="text-2xl font-bold text-black block">0</span>
                 </div>
 
-                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm xl:col-span-2">
                     <div class="flex items-center justify-between text-zinc-500 mb-2">
                         <span class="text-xs font-semibold">Total Vendors</span>
                         <i class="fa-solid fa-store text-amber-600"></i>
                     </div>
-                    <span id="metricTotalVendors" class="text-xl font-bold text-black block">0</span>
+                    <span id="metricTotalVendors" class="text-2xl font-bold text-black block">0</span>
                 </div>
 
-                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm xl:col-span-2">
                     <div class="flex items-center justify-between text-zinc-500 mb-2">
                         <span class="text-xs font-semibold">Total Products</span>
                         <i class="fa-solid fa-boxes-stacked text-teal-600"></i>
                     </div>
-                    <span id="metricTotalProducts" class="text-xl font-bold text-black block">0</span>
+                    <span id="metricTotalProducts" class="text-2xl font-bold text-black block">0</span>
                 </div>
 
-                <div class="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
+                <div class="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm xl:col-span-2">
                     <div class="flex items-center justify-between text-red-600 mb-2">
-                        <span class="text-xs font-semibold">Low Stock</span>
+                        <span class="text-xs font-semibold">Low Stock Alert</span>
                         <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
                     </div>
-                    <span id="metricLowStockItems" class="text-xl font-bold text-red-600 block">0</span>
+                    <span id="metricLowStockItems" class="text-2xl font-bold text-red-600 block">0</span>
                 </div>
+
             </div>
 
             <!-- Chart Grid -->
@@ -251,7 +271,7 @@
 
                 <div class="p-6 bg-white border border-zinc-200 rounded-xl shadow-sm">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xs font-bold text-zinc-600">Freight Status Distribution</h3>
+                        <h3 class="text-xs font-bold text-zinc-600">Shipment Status Distribution</h3>
                         <span class="text-xs text-zinc-400">Doughnut Graph</span>
                     </div>
                     <div class="h-64 relative flex items-center justify-center">
@@ -308,7 +328,7 @@
 
             <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-zinc-200 flex items-center justify-between">
-                    <h3 class="text-xs font-bold text-black tracking-tight">Active Freight Logistics</h3>
+                    <h3 class="text-base font-bold text-black tracking-tight">Active Recent Shipment Logistics</h3>
                     <span class="text-xs text-zinc-500">Live Shipments</span>
                 </div>
                 <div class="overflow-x-auto">
@@ -330,6 +350,57 @@
 
         <!-- SECTION: ORDERS MANAGEMENT TABLE -->
         <section id="secOrders" class="section-pane hidden space-y-6">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Pending</span>
+                        <i class="fa-solid fa-clock text-amber-500"></i>
+                    </div>
+                    <span id="orderSummaryPending" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Confirmed</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    </div>
+                    <span id="orderSummaryConfirmed" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Processing</span>
+                        <i class="fa-solid fa-gear text-blue-500"></i>
+                    </div>
+                    <span id="orderSummaryProcessing" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Shipped</span>
+                        <i class="fa-solid fa-truck-fast text-purple-500"></i>
+                    </div>
+                    <span id="orderSummaryShipped" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Delivered</span>
+                        <i class="fa-solid fa-box-open text-emerald-600"></i>
+                    </div>
+                    <span id="orderSummaryDelivered" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Cancelled</span>
+                        <i class="fa-solid fa-ban text-red-500"></i>
+                    </div>
+                    <span id="orderSummaryCancelled" class="text-2xl font-bold text-black block">0</span>
+                </div>
+            </div>
+
             <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
@@ -432,10 +503,70 @@
 
         <!-- SECTION: SHIPMENTS MANAGEMENT TABLE -->
         <section id="secShipments" class="section-pane hidden space-y-6">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Pending</span>
+                        <i class="fa-solid fa-clock text-amber-500"></i>
+                    </div>
+                    <span id="shipmentSummaryPending" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Processing</span>
+                        <i class="fa-solid fa-boxes-packing text-blue-500"></i>
+                    </div>
+                    <span id="shipmentSummaryProcessing" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Shipped</span>
+                        <i class="fa-solid fa-paper-plane text-indigo-500"></i>
+                    </div>
+                    <span id="shipmentSummaryShipped" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">In Transit</span>
+                        <i class="fa-solid fa-truck-fast text-purple-500"></i>
+                    </div>
+                    <span id="shipmentSummaryInTransit" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Out for Delivery</span>
+                        <i class="fa-solid fa-location-dot text-amber-600"></i>
+                    </div>
+                    <span id="shipmentSummaryOutForDelivery" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Delivered</span>
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                    </div>
+                    <span id="shipmentSummaryDelivered" class="text-2xl font-bold text-black block">0</span>
+                </div>
+
+                <div class="p-4 bg-white border border-zinc-200 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between text-zinc-500 mb-2">
+                        <span class="text-xs font-semibold">Cancelled</span>
+                        <i class="fa-solid fa-ban text-red-500"></i>
+                    </div>
+                    <span id="shipmentSummaryCancelled" class="text-2xl font-bold text-black block">0</span>
+                </div>
+            </div>
+
             <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-sm font-bold text-black tracking-tight">Shipments & Logistics Management</h2>
+                        <h2 class="text-sm font-bold text-black tracking-tight">Shipments & Logistics
+                            Management</h2>
                         <p class="text-xs text-zinc-500">Track freight shipments, status timelines, and dispatch
                             details.</p>
                     </div>
@@ -1027,7 +1158,8 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-sm font-bold text-black tracking-tight">Customer Account Directory</h2>
-                        <p class="text-xs text-zinc-500">Filter, inspect, and evaluate registered client accounts and order histories.</p>
+                        <p class="text-xs text-zinc-500">Filter, inspect, and evaluate registered client accounts and
+                            order histories.</p>
                     </div>
 
                     <div class="flex items-center gap-3">
@@ -1143,6 +1275,138 @@
                             <i class="fa-solid fa-chevron-left mr-1"></i> Prev
                         </button>
                         <button id="customerNextPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: AUDIT LOGS TABLE -->
+        <section id="secAudits" class="section-pane hidden space-y-6">
+            <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-4">
+                <!-- Audit Alert Banner -->
+                <div id="auditTableAlert"
+                     class="hidden p-4 rounded-xl text-xs border bg-red-50 text-red-900 border-red-200 shadow-sm mb-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-triangle-exclamation text-red-600 text-sm mt-0.5"></i>
+                        <div class="space-y-1">
+                            <div id="auditAlertMessage" class="font-bold"></div>
+                            <div id="auditAlertDetail" class="text-red-700"></div>
+                            <div class="flex gap-2 text-[10px] font-mono mt-1">
+                                <span id="auditAlertField"
+                                      class="hidden bg-red-100 text-red-800 px-1.5 py-0.5 rounded"></span>
+                                <span id="auditAlertStatus"
+                                      class="hidden bg-red-100 text-red-800 px-1.5 py-0.5 rounded"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-black tracking-tight">System Audit & Compliance Logs</h2>
+                        <p class="text-xs text-zinc-500">Inspect real-time administrative actions, system events, and
+                            security access entries.</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Total Logs: <strong id="auditsTotalCount" class="text-black">0</strong>
+                        </span>
+                        <span class="text-xs bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg">
+                            Page: <strong id="auditsPageInfo" class="text-black">0 / 0</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-zinc-100">
+
+                    <div class="relative flex-1 w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                        <input type="text" id="auditSearchInput"
+                               placeholder="Search by Entity, Entity ID, Username, or Description..."
+                               class="w-full bg-zinc-50 border border-zinc-200 rounded-lg pl-9 pr-4 py-2 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                    </div>
+
+                    <div class="w-full md:w-auto flex items-center gap-2">
+                        <input type="datetime-local" id="orderFromDate"
+                               title="From Date"
+                               class="bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                        <span class="text-zinc-400 text-xs">to</span>
+                        <input type="datetime-local" id="orderToDate"
+                               title="To Date"
+                               class="bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                    </div>
+
+                    <div class="w-full md:w-44">
+                        <select id="auditActionFilter"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="">All Actions</option>
+                            <option value="CREATE">Create</option>
+                            <option value="UPDATE">Update</option>
+                            <option value="DELETE">Delete</option>
+                            <option value="LOGIN">Login</option>
+                            <option value="LOGOUT">Logout</option>
+                            <option value="VIEW">View</option>
+                            <option value="APPROVE">Approve</option>
+                            <option value="REJECT">Reject</option>
+                            <option value="CANCEL">Cancel</option>
+                            <option value="SHIP">Ship</option>
+                            <option value="DELIVER">Deliver</option>
+                            <option value="SHIPMENT_OVERDUE">Shipment Overdue</option>
+                        </select>
+                    </div>
+
+                    <div class="w-full md:w-28">
+                        <select id="auditPageSize"
+                                class="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-black focus:bg-white transition-colors">
+                            <option value="10">10 / page</option>
+                            <option value="20" selected>20 / page</option>
+                            <option value="50">50 / page</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-zinc-100/90 text-[11px] font-bold text-zinc-600 border-b border-zinc-200 uppercase tracking-wider select-none">
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors audit-sortable-header"
+                                data-sort="actionTimestamp">
+                                Date & Time <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors audit-sortable-header"
+                                data-sort="action">
+                                Action <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors audit-sortable-header"
+                                data-sort="entityType">
+                                Entity Type <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5 cursor-pointer hover:bg-zinc-200/70 transition-colors audit-sortable-header"
+                                data-sort="username">
+                                User <i class="fa-solid fa-sort text-zinc-400 ml-1"></i>
+                            </th>
+                            <th class="py-3.5 px-5">Description</th>
+                            <th class="py-3.5 px-5 text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="auditsTableBody" class="divide-y divide-zinc-200 text-xs"></tbody>
+                    </table>
+                </div>
+
+                <div class="p-4 border-t border-zinc-200 flex items-center justify-between bg-zinc-50">
+                    <span id="auditsPaginationText" class="text-xs text-zinc-500">Showing 0 of 0 entries</span>
+
+                    <div class="flex items-center gap-2">
+                        <button id="auditPrevPageBtn" disabled
+                                class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                        </button>
+                        <button id="auditNextPageBtn" disabled
                                 class="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-lg hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                             Next <i class="fa-solid fa-chevron-right ml-1"></i>
                         </button>
@@ -2206,7 +2470,8 @@
 
         <div class="p-6 space-y-6 overflow-y-auto text-xs flex-1 bg-zinc-50/50">
             <div id="modalCustomerLoader" class="hidden py-12 text-center text-zinc-500">
-                <i class="fa-solid fa-spinner spinner text-2xl mb-2 text-black block"></i> Fetching Customer Record & Analytics...
+                <i class="fa-solid fa-spinner spinner text-2xl mb-2 text-black block"></i> Fetching Customer Record &
+                Analytics...
             </div>
             <div id="modalCustomerContent" class="space-y-6">
                 <!-- Summary Stats Header -->
@@ -2277,6 +2542,77 @@
     </div>
 </div>
 
+<!-- AUDIT DETAILS MODAL -->
+<div id="auditDetailsModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-200">
+    <div class="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-clipboard-check text-indigo-400 text-base"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 id="modalAuditTitle" class="text-base font-bold tracking-tight">Audit Log Details</h3>
+                        <span id="modalAuditActionBadge"></span>
+                    </div>
+                    <p id="modalAuditTimestamp" class="text-xs text-zinc-400">Timestamp: --</p>
+                </div>
+            </div>
+            <button id="closeAuditModalBtn"
+                    class="text-zinc-400 hover:text-white p-2 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6 overflow-y-auto text-xs flex-1 bg-zinc-50/50">
+            <div id="modalAuditLoader" class="hidden py-12 text-center text-zinc-500">
+                <i class="fa-solid fa-spinner spinner text-2xl mb-2 text-black block"></i> Fetching Audit Log Data...
+            </div>
+            <div id="modalAuditContent" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-2">
+                        <span class="text-zinc-400 text-[11px] font-semibold block uppercase">Target Entity</span>
+                        <div class="flex justify-between"><span class="text-zinc-400">Entity Type:</span> <strong
+                                id="modalAuditEntityType" class="text-black">--</strong></div>
+                        <div class="flex justify-between"><span class="text-zinc-400">Entity ID:</span> <span
+                                id="modalAuditEntityId" class="font-mono text-zinc-700 truncate max-w-[160px]">--</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-2">
+                        <span class="text-zinc-400 text-[11px] font-semibold block uppercase">User Telemetry</span>
+                        <div class="flex justify-between"><span class="text-zinc-400">Username:</span> <strong
+                                id="modalAuditUsername" class="text-black">--</strong></div>
+                        <div class="flex justify-between"><span class="text-zinc-400">User ID:</span> <span
+                                id="modalAuditUserId" class="font-mono text-zinc-700 truncate max-w-[160px]">--</span>
+                        </div>
+                        <div class="flex justify-between"><span class="text-zinc-400">IP Address:</span> <span
+                                id="modalAuditIpAddress" class="font-mono text-indigo-700 font-bold">--</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 border border-zinc-200 rounded-xl shadow-sm space-y-2">
+                    <span class="text-zinc-400 text-[11px] font-semibold block uppercase">Audit Description</span>
+                    <p id="modalAuditDescription" class="text-zinc-800 font-medium leading-relaxed">--</p>
+                </div>
+
+                <div class="bg-white p-3 border border-zinc-200 rounded-xl text-zinc-500 text-[11px] flex justify-between">
+                    <span>Audit Log UUID:</span>
+                    <span id="modalAuditId" class="font-mono text-zinc-700">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 py-3 border-t border-zinc-200 bg-zinc-100 flex justify-end shrink-0">
+            <button id="modalAuditCloseFooterBtn"
+                    class="bg-black text-white hover:bg-zinc-800 font-bold text-xs px-5 py-2 rounded-lg transition-all shadow-sm">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- REGISTER EMPLOYEE MODAL -->
 <div id="registerEmployeeModal"
      class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-200">
@@ -2305,7 +2641,8 @@
             <div class="font-bold flex items-center gap-2">
                 <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
                 <span id="registerEmployeeAlertMessage">Validation Error</span>
-                <span id="registerEmployeeAlertStatus" class="ml-auto font-mono text-[10px] bg-red-100 px-1.5 py-0.5 rounded text-red-700"></span>
+                <span id="registerEmployeeAlertStatus"
+                      class="ml-auto font-mono text-[10px] bg-red-100 px-1.5 py-0.5 rounded text-red-700"></span>
             </div>
             <div id="registerEmployeeAlertDetail" class="text-red-600 mt-1 text-[11px]"></div>
         </div>
@@ -2314,20 +2651,24 @@
         <form id="registerEmployeeForm" class="p-6 overflow-y-auto space-y-4 text-xs flex-1">
             <!-- Account Credentials -->
             <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
-                <h4 class="font-bold text-black text-xs uppercase tracking-wider text-zinc-500">System Account Credentials</h4>
+                <h4 class="font-bold text-black text-xs uppercase tracking-wider text-zinc-500">System Account
+                    Credentials</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">Username <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Username <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="regEmpUsername" required placeholder="john_doe"
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">Password <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Password <span
+                                class="text-red-500">*</span></label>
                         <input type="password" id="regEmpPassword" required placeholder="Min 8 chars, 1 num, 1 symbol"
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">Security Role <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Security Role <span
+                                class="text-red-500">*</span></label>
                         <select id="regEmpRoleType" required
                                 class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                             <option value="">-- Select Role --</option>
@@ -2342,25 +2683,30 @@
 
             <!-- Identity & Department -->
             <div class="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
-                <h4 class="font-bold text-black text-xs uppercase tracking-wider text-zinc-500">Personal & Identity Details</h4>
+                <h4 class="font-bold text-black text-xs uppercase tracking-wider text-zinc-500">Personal & Identity
+                    Details</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">First Name <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">First Name <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="regEmpFirstName" required placeholder="John"
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">Last Name <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Last Name <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="regEmpLastName" required placeholder="Doe"
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">Email Address <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Email Address <span
+                                class="text-red-500">*</span></label>
                         <input type="email" id="regEmpEmail" required placeholder="john.doe@company.com"
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">Department <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Department <span
+                                class="text-red-500">*</span></label>
                         <select id="regEmpDepartment" required
                                 class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                             <option value="">-- Choose Department --</option>
@@ -2409,12 +2755,14 @@
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">City <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">City <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="regEmpCity" required placeholder="City name"
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div>
-                        <label class="block font-semibold text-zinc-700 mb-1">Postal Code <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Postal Code <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="regEmpPostalCode" required placeholder="Postal Code"
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
@@ -2429,7 +2777,8 @@
                                class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block font-semibold text-zinc-700 mb-1">Country <span class="text-red-500">*</span></label>
+                        <label class="block font-semibold text-zinc-700 mb-1">Country <span
+                                class="text-red-500">*</span></label>
                         <select id="regEmpCountryId" required
                                 class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black">
                             <option value="">-- Choose Country --</option>

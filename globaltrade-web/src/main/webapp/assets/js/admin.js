@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_BASE_URL = getContextPath();
 
-    // --- AUTHENTICATED FETCH & TOKEN REFRESH ENGINE ---
     let isRefreshing = false;
     let refreshSubscribers = [];
 
@@ -116,10 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return response;
     }
 
-    // Export globally for cross-script utilization
     window.authenticatedFetch = authenticatedFetch;
 
-    // Helper to display ValidationErrorResponse fields
     function showValidationErrorAlert(errorData, alertElem, msgElem, detailElem, fieldElem = null, statusElem = null) {
         if (!alertElem) return;
 
@@ -128,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let field = '';
         let status = '';
 
-        // 1. Handle Array of Errors directly: [{ field, message }, ...]
         if (Array.isArray(errorData)) {
             message = 'Multiple Validation Errors';
             detail = errorData.map(err => {
@@ -137,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join(' | ');
             status = errorData[0]?.status || '';
 
-            // 2. Handle Object containing an errors array: { message: "...", errors: [...] }
         } else if (errorData && Array.isArray(errorData.errors)) {
             message = errorData.message || 'Validation Failure';
             detail = errorData.errors.map(err => {
@@ -146,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join(' | ');
             status = errorData.status || '';
 
-            // 3. Handle standard single error object
         } else if (errorData && typeof errorData === 'object') {
             message = errorData.message || 'Validation Error';
             detail = errorData.detail || errorData.message || 'State transition rejected by validation rules.';
@@ -156,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
             detail = errorData;
         }
 
-        // Populate UI elements
         if (msgElem) msgElem.textContent = message;
         if (detailElem) detailElem.textContent = detail;
 
@@ -181,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alertElem.classList.remove('hidden');
     }
 
-    // Core Elements
     const adminSidebar = document.getElementById('adminSidebar');
     const mainWrapper = document.getElementById('mainWrapper');
     const sidebarToggle = document.getElementById('sidebarToggle');
@@ -236,21 +228,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalVendorLoader = document.getElementById('modalVendorLoader');
     const modalVendorContent = document.getElementById('modalVendorContent');
 
-    // Customer Modal Elements
     const customerDetailsModal = document.getElementById('customerDetailsModal');
     const closeCustomerModalBtn = document.getElementById('closeCustomerModalBtn');
     const modalCustomerCloseFooterBtn = document.getElementById('modalCustomerCloseFooterBtn');
     const modalCustomerLoader = document.getElementById('modalCustomerLoader');
     const modalCustomerContent = document.getElementById('modalCustomerContent');
 
-    // Employee Modal Elements
     const employeeDetailsModal = document.getElementById('employeeDetailsModal');
     const closeEmployeeModalBtn = document.getElementById('closeEmployeeModalBtn');
     const modalEmployeeCloseFooterBtn = document.getElementById('modalEmployeeCloseFooterBtn');
     const modalEmployeeLoader = document.getElementById('modalEmployeeLoader');
     const modalEmployeeContent = document.getElementById('modalEmployeeContent');
 
-    // Register Employee Modal Elements
+    const auditDetailsModal = document.getElementById('auditDetailsModal');
+    const closeAuditModalBtn = document.getElementById('closeAuditModalBtn');
+    const modalAuditCloseFooterBtn = document.getElementById('modalAuditCloseFooterBtn');
+    const modalAuditLoader = document.getElementById('modalAuditLoader');
+    const modalAuditContent = document.getElementById('modalAuditContent');
+
     const registerEmployeeModal = document.getElementById('registerEmployeeModal');
     const openRegisterEmployeeModalBtn = document.getElementById('openRegisterEmployeeModalBtn');
     const closeRegisterEmployeeModalBtn = document.getElementById('closeRegisterEmployeeModalBtn');
@@ -292,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelModalAlertDetail = document.getElementById('cancelModalAlertDetail');
     const cancelModalAlertStatus = document.getElementById('cancelModalAlertStatus');
 
-    // Ship Shipment Modal Elements
     const shipConfirmModal = document.getElementById('shipConfirmModal');
     const closeShipConfirmModalBtn = document.getElementById('closeShipConfirmModalBtn');
     const shipModalDismissBtn = document.getElementById('shipModalDismissBtn');
@@ -305,7 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const shipModalAlertDetail = document.getElementById('shipModalAlertDetail');
     const shipModalAlertStatus = document.getElementById('shipModalAlertStatus');
 
-    // Update Tracking Modal Elements
     const updateTrackingModal = document.getElementById('updateTrackingModal');
     const closeTrackingModalBtn = document.getElementById('closeTrackingModalBtn');
     const trackingModalDismissBtn = document.getElementById('trackingModalDismissBtn');
@@ -319,7 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const trackingModalAlertDetail = document.getElementById('trackingModalAlertDetail');
     const trackingModalAlertStatus = document.getElementById('trackingModalAlertStatus');
 
-    // Create GRN Modal Elements
     const createGrnModal = document.getElementById('createGrnModal');
     const openAddGrnModalBtn = document.getElementById('openAddGrnModalBtn');
     const closeCreateGrnModalBtn = document.getElementById('closeCreateGrnModalBtn');
@@ -353,7 +345,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let shipmentToUpdateTrackingId = null;
     let vendorToUpdateAction = null;
 
-    // Collapsible Sidebar Controller
+    let auditQueryState = {
+        userId: null,
+        search: '',
+        status: '',
+        from: '',
+        to: '',
+        sortBy: 'createdAt',
+        direction: 'DESC',
+        page: 0,
+        size: 20
+    };
+
+    let auditSearchDebounceTimer = null;
+
     let isCollapsed = false;
 
     if (sidebarToggle) {
@@ -379,7 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Status Badging
     function getStatusBadgeHtml(statusStr) {
         const rawStatus = (statusStr || '').toUpperCase();
         let displayLabel = rawStatus.charAt(0) + rawStatus.slice(1).toLowerCase().replace(/_/g, ' ');
@@ -391,6 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'ACTIVE':
             case 'IN_STOCK':
             case 'RECEIVED':
+            case 'CREATE':
+            case 'APPROVE':
                 return `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-[8px] text-emerald-600"></i> ${displayLabel}</span>`;
             case 'CANCELLED':
             case 'DISCONTINUED':
@@ -401,6 +407,9 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'TERMINATED':
             case 'BLOCKED':
             case 'BLACKLISTED':
+            case 'DELETE':
+            case 'REJECT':
+            case 'SHIPMENT_OVERDUE':
                 return `<span class="px-2.5 py-1 bg-red-100 text-red-800 border border-red-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-xmark text-[8px] text-red-600"></i> ${displayLabel}</span>`;
             case 'PENDING':
             case 'RESERVED':
@@ -409,11 +418,16 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'DRAFT':
             case 'SUSPENDED':
             case 'UNDER_REVIEW':
+            case 'UPDATE':
                 return `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-[8px] text-amber-600"></i> ${displayLabel}</span>`;
             case 'PROCESSING':
             case 'SHIPPED':
             case 'IN_TRANSIT':
             case 'OUT_FOR_DELIVERY':
+            case 'LOGIN':
+            case 'LOGOUT':
+            case 'VIEW':
+            case 'SHIP':
                 return `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded text-xs font-semibold inline-flex items-center gap-1.5"><i class="fa-solid fa-spinner spinner text-[8px] text-blue-600"></i> ${displayLabel}</span>`;
             default:
                 return `<span class="px-2.5 py-1 bg-zinc-100 text-zinc-800 border border-zinc-300 rounded text-xs font-semibold inline-flex items-center gap-1.5">${displayLabel}</span>`;
@@ -457,7 +471,58 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // Auth Session Guard
+    function updateOrderSummaryCards(orderStatusArray = []) {
+        const counts = {
+            PENDING: 0,
+            CONFIRMED: 0,
+            PROCESSING: 0,
+            SHIPPED: 0,
+            DELIVERED: 0,
+            CANCELLED: 0
+        };
+
+        orderStatusArray.forEach(item => {
+            const key = (item.status || '').toUpperCase();
+            if (counts.hasOwnProperty(key)) {
+                counts[key] = item.count || 0;
+            }
+        });
+
+        if (document.getElementById('orderSummaryPending')) document.getElementById('orderSummaryPending').textContent = counts.PENDING.toLocaleString();
+        if (document.getElementById('orderSummaryConfirmed')) document.getElementById('orderSummaryConfirmed').textContent = counts.CONFIRMED.toLocaleString();
+        if (document.getElementById('orderSummaryProcessing')) document.getElementById('orderSummaryProcessing').textContent = counts.PROCESSING.toLocaleString();
+        if (document.getElementById('orderSummaryShipped')) document.getElementById('orderSummaryShipped').textContent = counts.SHIPPED.toLocaleString();
+        if (document.getElementById('orderSummaryDelivered')) document.getElementById('orderSummaryDelivered').textContent = counts.DELIVERED.toLocaleString();
+        if (document.getElementById('orderSummaryCancelled')) document.getElementById('orderSummaryCancelled').textContent = counts.CANCELLED.toLocaleString();
+    }
+
+    function updateShipmentSummaryCards(shipmentStatusArray = []) {
+        const counts = {
+            PENDING: 0,
+            PROCESSING: 0,
+            SHIPPED: 0,
+            IN_TRANSIT: 0,
+            OUT_FOR_DELIVERY: 0,
+            DELIVERED: 0,
+            CANCELLED: 0
+        };
+
+        shipmentStatusArray.forEach(item => {
+            const key = (item.status || '').toUpperCase();
+            if (counts.hasOwnProperty(key)) {
+                counts[key] = item.count || 0;
+            }
+        });
+
+        if (document.getElementById('shipmentSummaryPending')) document.getElementById('shipmentSummaryPending').textContent = counts.PENDING.toLocaleString();
+        if (document.getElementById('shipmentSummaryProcessing')) document.getElementById('shipmentSummaryProcessing').textContent = counts.PROCESSING.toLocaleString();
+        if (document.getElementById('shipmentSummaryShipped')) document.getElementById('shipmentSummaryShipped').textContent = counts.SHIPPED.toLocaleString();
+        if (document.getElementById('shipmentSummaryInTransit')) document.getElementById('shipmentSummaryInTransit').textContent = counts.IN_TRANSIT.toLocaleString();
+        if (document.getElementById('shipmentSummaryOutForDelivery')) document.getElementById('shipmentSummaryOutForDelivery').textContent = counts.OUT_FOR_DELIVERY.toLocaleString();
+        if (document.getElementById('shipmentSummaryDelivered')) document.getElementById('shipmentSummaryDelivered').textContent = counts.DELIVERED.toLocaleString();
+        if (document.getElementById('shipmentSummaryCancelled')) document.getElementById('shipmentSummaryCancelled').textContent = counts.CANCELLED.toLocaleString();
+    }
+
     function checkAdminSession() {
         const token = localStorage.getItem('access_token');
         const username = localStorage.getItem('username');
@@ -479,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!isAdmin) {
-            window.location.href = 'dashboard.html';
+            window.location.href = 'customer.html';
             return false;
         }
 
@@ -494,7 +559,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!checkAdminSession()) return;
 
-    // Order Details Modal Controllers
     function openOrderModal() {
         if (orderDetailsModal) orderDetailsModal.classList.remove('hidden');
     }
@@ -511,7 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Vendor Details Modal Controllers
     function openVendorModal() {
         if (vendorDetailsModal) vendorDetailsModal.classList.remove('hidden');
     }
@@ -528,7 +591,288 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Vendor Inspection Fetcher
+    function openAuditModal() {
+        if (auditDetailsModal) auditDetailsModal.classList.remove('hidden');
+    }
+
+    function closeAuditModal() {
+        if (auditDetailsModal) auditDetailsModal.classList.add('hidden');
+    }
+
+    if (closeAuditModalBtn) closeAuditModalBtn.addEventListener('click', closeAuditModal);
+    if (modalAuditCloseFooterBtn) modalAuditCloseFooterBtn.addEventListener('click', closeAuditModal);
+    if (auditDetailsModal) {
+        auditDetailsModal.addEventListener('click', (e) => {
+            if (e.target === auditDetailsModal) closeAuditModal();
+        });
+    }
+
+    async function fetchAndDisplayAuditDetails(auditId) {
+        if (!auditId) return;
+
+        openAuditModal();
+        if (modalAuditLoader) modalAuditLoader.classList.remove('hidden');
+        if (modalAuditContent) modalAuditContent.classList.add('hidden');
+
+        try {
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/audits/${auditId}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) throw new Error(`HTTP Error (${response.status})`);
+
+            const details = await response.json();
+            renderAuditDetailsModal(details);
+
+        } catch (err) {
+            showAlert(`Unable to fetch audit details: ${err.message}`, 'error');
+            closeAuditModal();
+        } finally {
+            if (modalAuditLoader) modalAuditLoader.classList.add('hidden');
+            if (modalAuditContent) modalAuditContent.classList.remove('hidden');
+        }
+    }
+
+    function renderAuditDetailsModal(data) {
+        document.getElementById('modalAuditTitle').textContent = `Audit #${data.auditId ? data.auditId.substring(0, 8) : 'N/A'}`;
+        document.getElementById('modalAuditActionBadge').innerHTML = getStatusBadgeHtml(data.action);
+
+        const timestampStr = data.actionTimestamp ? new Date(data.actionTimestamp).toLocaleString() : 'N/A';
+        document.getElementById('modalAuditTimestamp').textContent = `Timestamp: ${timestampStr}`;
+
+        document.getElementById('modalAuditEntityType').textContent = data.entityType || 'N/A';
+        document.getElementById('modalAuditEntityId').textContent = data.entityId || 'N/A';
+
+        document.getElementById('modalAuditUsername').textContent = data.username || 'SYSTEM';
+        document.getElementById('modalAuditUserId').textContent = data.userId || 'N/A';
+        document.getElementById('modalAuditIpAddress').textContent = data.ipAddress || 'Internal / N/A';
+
+        document.getElementById('modalAuditDescription').textContent = data.description || 'No detailed description provided.';
+        document.getElementById('modalAuditId').textContent = data.auditId || 'N/A';
+    }
+
+    async function fetchAdminAudits() {
+        const tbody = document.getElementById('auditsTableBody');
+        if (!tbody) return;
+
+        const alertElem = document.getElementById('auditTableAlert');
+        const msgElem = document.getElementById('auditAlertMessage');
+        const detailElem = document.getElementById('auditAlertDetail');
+        const fieldElem = document.getElementById('auditAlertField');
+        const statusElem = document.getElementById('auditAlertStatus');
+
+        if (alertElem) alertElem.classList.add('hidden');
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-zinc-500"><i class="fa-solid fa-spinner spinner mr-2"></i>Loading audit logs...</td></tr>`;
+
+        try {
+            const queryParams = new URLSearchParams({
+                sortBy: auditQueryState.sortBy,
+                direction: auditQueryState.direction,
+                page: auditQueryState.page,
+                size: auditQueryState.size
+            });
+
+            if (auditQueryState.search.trim()) queryParams.append('search', auditQueryState.search.trim());
+            if (auditQueryState.action) queryParams.append('action', auditQueryState.action);
+            if (auditQueryState.from) queryParams.append('from', auditQueryState.from);
+            if (auditQueryState.to) queryParams.append('to', auditQueryState.to);
+            if (auditQueryState.status) queryParams.append('status', auditQueryState.status);
+            if (auditQueryState.userId) queryParams.append('userId', auditQueryState.userId);
+
+            const response = await authenticatedFetch(`${API_BASE_URL}/admin/audits?${queryParams.toString()}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+
+                showValidationErrorAlert(
+                    errorData,
+                    alertElem,
+                    msgElem,
+                    detailElem,
+                    fieldElem,
+                    statusElem
+                );
+
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-zinc-400">Request prevented due to validation error.</td></tr>`;
+                return;
+            }
+
+            const data = await response.json();
+            renderAuditsTable(data.content || []);
+            updateAuditPaginationControls(data);
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-600">Failed to load audit records. ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderAuditsTable(audits) {
+        const tbody = document.getElementById('auditsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!audits || audits.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-zinc-400">No matching audit logs found.</td></tr>`;
+            return;
+        }
+
+        audits.forEach(audit => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-zinc-50/80 cursor-pointer transition-colors';
+
+            const auditId = audit.auditId || audit.id;
+            const timestampStr = audit.actionTimestamp ? new Date(audit.actionTimestamp).toLocaleString() : 'N/A';
+
+            tr.innerHTML = `
+                <td class="py-3.5 px-5 font-semibold text-zinc-600">${timestampStr}</td>
+                <td class="py-3.5 px-5">${getStatusBadgeHtml(audit.action)}</td>
+                <td class="py-3.5 px-5 font-bold text-black">${audit.entityType || 'N/A'}</td>
+                <td class="py-3.5 px-5 font-bold text-zinc-800">${audit.username || 'SYSTEM'}</td>
+                <td class="py-3.5 px-5 text-zinc-600 truncate max-w-xs">${audit.description || 'N/A'}</td>
+                <td class="py-3.5 px-5 text-center action-cells">
+                    <button class="btn-view-audit p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors" title="View Audit Details">
+                        <i class="fa-solid fa-eye text-xs pointer-events-none"></i>
+                    </button>
+                </td>
+            `;
+
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('.action-cells')) return;
+                if (auditId) fetchAndDisplayAuditDetails(auditId);
+            });
+
+            const viewBtn = tr.querySelector('.btn-view-audit');
+            if (viewBtn) {
+                viewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (auditId) fetchAndDisplayAuditDetails(auditId);
+                });
+            }
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateAuditPaginationControls(pageData) {
+        const totalElements = pageData.totalElements || 0;
+        const totalPages = pageData.totalPages || 0;
+        const currentPage = pageData.page || 0;
+        const pageSize = pageData.size || 20;
+
+        const countElem = document.getElementById('auditsTotalCount');
+        const infoElem = document.getElementById('auditsPageInfo');
+        const textElem = document.getElementById('auditsPaginationText');
+        const prevBtn = document.getElementById('auditPrevPageBtn');
+        const nextBtn = document.getElementById('auditNextPageBtn');
+
+        if (countElem) countElem.textContent = totalElements.toLocaleString();
+        if (infoElem) infoElem.textContent = `${totalPages > 0 ? currentPage + 1 : 0} / ${totalPages}`;
+
+        const startItem = totalElements === 0 ? 0 : currentPage * pageSize + 1;
+        const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
+        if (textElem) textElem.textContent = `Showing ${startItem} to ${endItem} of ${totalElements} entries`;
+
+        if (prevBtn) prevBtn.disabled = currentPage <= 0;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1 || totalPages === 0;
+    }
+
+    function initAuditTableEvents() {
+        const searchInput = document.getElementById('auditSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(auditSearchDebounceTimer);
+                auditSearchDebounceTimer = setTimeout(() => {
+                    auditQueryState.search = e.target.value;
+                    auditQueryState.page = 0;
+                    fetchAdminAudits();
+                }, 300);
+            });
+        }
+
+        const fromDateInput = document.getElementById('orderFromDate');
+        if (fromDateInput) {
+            fromDateInput.addEventListener('change', (e) => {
+                auditQueryState.from = e.target.value;
+                auditQueryState.page = 0;
+                fetchAdminAudits();
+            });
+        }
+
+        const toDateInput = document.getElementById('orderToDate');
+        if (toDateInput) {
+            toDateInput.addEventListener('change', (e) => {
+                auditQueryState.to = e.target.value;
+                auditQueryState.page = 0;
+                fetchAdminAudits();
+            });
+        }
+
+        const actionFilter = document.getElementById('auditActionFilter');
+        if (actionFilter) {
+            actionFilter.addEventListener('change', (e) => {
+                auditQueryState.action = e.target.value;
+                auditQueryState.page = 0;
+                fetchAdminAudits();
+            });
+        }
+
+        const pageSizeSelect = document.getElementById('auditPageSize');
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', (e) => {
+                auditQueryState.size = parseInt(e.target.value, 10);
+                auditQueryState.page = 0;
+                fetchAdminAudits();
+            });
+        }
+
+        const sortableHeaders = document.querySelectorAll('.audit-sortable-header');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const field = header.getAttribute('data-sort');
+                if (auditQueryState.sortBy === field) {
+                    auditQueryState.direction = auditQueryState.direction === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    auditQueryState.sortBy = field;
+                    auditQueryState.direction = 'ASC';
+                }
+
+                sortableHeaders.forEach(h => {
+                    const icon = h.querySelector('i');
+                    if (icon) icon.className = 'fa-solid fa-sort text-zinc-400 ml-1';
+                });
+                const currentIcon = header.querySelector('i');
+                if (currentIcon) {
+                    currentIcon.className = auditQueryState.direction === 'ASC'
+                        ? 'fa-solid fa-sort-up text-black ml-1'
+                        : 'fa-solid fa-sort-down text-black ml-1';
+                }
+
+                fetchAdminAudits();
+            });
+        });
+
+        const prevBtn = document.getElementById('auditPrevPageBtn');
+        const nextBtn = document.getElementById('auditNextPageBtn');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (auditQueryState.page > 0) {
+                    auditQueryState.page--;
+                    fetchAdminAudits();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                auditQueryState.page++;
+                fetchAdminAudits();
+            });
+        }
+    }
+
     async function fetchAndDisplayVendorDetails(vendorId) {
         if (!vendorId || vendorId === 'undefined') return;
 
@@ -555,7 +899,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Render Vendors Table
     function renderVendorsTable(vendors) {
         const tbody = document.getElementById('vendorsTableBody');
         if (!tbody) return;
@@ -833,7 +1176,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // State for Vendors Table Pagination & Query
     let vendorQueryState = {
         search: '',
         companyId: '',
@@ -1007,7 +1349,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- CUSTOMER MODULE ---
     let customerQueryState = {
         search: '',
         companyId: '',
@@ -1324,7 +1665,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- EMPLOYEE MODULE ---
     let employeeQueryState = {
         search: '',
         department: '',
@@ -1718,7 +2058,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Cancel Order Modal Controller
     function openCancelOrderModal(order) {
         orderToCancelId = order.orderId || order.id;
         if (!orderToCancelId) return;
@@ -1792,7 +2131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Ship Shipment Modal Controller
     function openShipConfirmModal(shipment) {
         shipmentToShipId = shipment.shipmentId || shipment.id;
         if (!shipmentToShipId) return;
@@ -1866,7 +2204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Update Tracking Modal Controller
     function openUpdateTrackingModal(shipment) {
         shipmentToUpdateTrackingId = shipment.shipmentId || shipment.id;
         if (!shipmentToUpdateTrackingId) return;
@@ -2117,7 +2454,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Shipment Modal Controller
     function openShipmentModal() {
         if (shipmentDetailsModal) shipmentDetailsModal.classList.remove('hidden');
     }
@@ -2230,7 +2566,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Inventory Modal Controller
     function openInventoryModal() {
         if (inventoryDetailsModal) inventoryDetailsModal.classList.remove('hidden');
     }
@@ -2305,7 +2640,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modalInvReorderLevel').textContent = (data.reorderLevel || 0).toLocaleString();
     }
 
-    // Goods Receive Note (GRN) Modal Controller
     function openGrnModal() {
         if (grnDetailsModal) grnDetailsModal.classList.remove('hidden');
     }
@@ -2399,7 +2733,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // State for GRN Pagination & Filters
     let grnQueryState = {
         search: '',
         companyId: '',
@@ -2852,7 +3185,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Dashboard Analytics Overview
     async function fetchAdminDashboard() {
         showLoader(true);
         clearAlert();
@@ -2868,6 +3200,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderSummaryMetrics(data.summary);
             renderCharts(data.monthlyRevenue, data.orderStatus, data.monthlyOrders, data.shipmentStatus);
+
+            // Populates status card badges for Orders and Shipments panes
+            updateOrderSummaryCards(data.orderStatus);
+            updateShipmentSummaryCards(data.shipmentStatus);
+
             renderLowStockTable(data.lowStockItems);
             renderRecentOrdersTable(data.recentOrders);
             renderActiveShipmentsTable(data.activeShipments);
@@ -2903,12 +3240,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCharts(monthlyRevenue = [], orderStatus = [], monthlyOrders = [], shipmentStatus = []) {
         const statusColors = {
-            'CONFIRMED': '#10b981',
-            'DELIVERED': '#059669',
-            'CANCELLED': '#ef4444',
-            'PENDING': '#f59e0b',
-            'PROCESSING': '#3b82f6',
-            'SHIPPED': '#8b5cf6'
+            'CONFIRMED':  '#34d399',
+            'DELIVERED':  '#10b981',
+            'CANCELLED':  '#f87171',
+            'PENDING':    '#fbbf24',
+            'PROCESSING': '#60a5fa',
+            'SHIPPED':    '#a78bfa'
         };
 
         const defaultPalette = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
@@ -3066,7 +3403,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Orders Controller
     let orderQueryState = {
         search: '',
         status: '',
@@ -3283,7 +3619,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Shipments Controller
     let shipmentQueryState = {
         search: '',
         status: '',
@@ -3349,12 +3684,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const deliveredAtStr = s.deliveredAt ? new Date(s.deliveredAt).toLocaleString() : 'N/A';
             const rawStatus = (s.status || '').toUpperCase();
 
-            const isPending = rawStatus === 'PENDING';
+            const isProcessing = rawStatus === 'PROCESSING';
             const isTerminal = rawStatus === 'DELIVERED' || rawStatus === 'CANCELLED';
 
             let actionButtonsHtml = '';
 
-            if (isPending) {
+            if (isProcessing) {
                 actionButtonsHtml = `
                     <button class="btn-ship-shipment p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 transition-colors" title="Dispatch / Ship Freight">
                         <i class="fa-solid fa-paper-plane text-xs pointer-events-none"></i>
@@ -3526,7 +3861,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Inventory Controller
     let inventoryQueryState = {
         search: '',
         warehouseId: '',
@@ -3788,7 +4122,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Section Switching Navigation
     function switchSection(targetId) {
         sectionPanes.forEach(pane => pane.classList.add('hidden'));
 
@@ -3819,6 +4152,8 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchAdminCustomers();
         } else if (targetId === 'secEmployees') {
             fetchAdminEmployees();
+        } else if (targetId === 'secAudits') {
+            fetchAdminAudits();
         }
 
         switch (targetId) {
@@ -3858,6 +4193,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentPageTitle) currentPageTitle.textContent = 'Employee Management';
                 if (currentPageSubtitle) currentPageSubtitle.textContent = 'Staff catalog, departments & system role permissions';
                 break;
+            case 'secAudits':
+                if (currentPageTitle) currentPageTitle.textContent = 'System Audit Logs';
+                if (currentPageSubtitle) currentPageSubtitle.textContent = 'Track and inspect administrative audit trails & security events';
+                break;
         }
     }
 
@@ -3890,7 +4229,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dashAlert) dashAlert.classList.add('hidden');
     }
 
-    // Initialize View Controls & Data Requests
     initOrdersTableEvents();
     initShipmentsTableEvents();
     initInventoryTableEvents();
@@ -3898,6 +4236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initVendorTableEvents();
     initCustomerTableEvents();
     initEmployeeTableEvents();
+    initAuditTableEvents();
     loadInventoryDropdownOptions();
     loadGrnDropdownOptions();
     loadVendorDropdownOptions();

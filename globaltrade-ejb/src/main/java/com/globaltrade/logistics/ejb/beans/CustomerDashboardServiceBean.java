@@ -6,6 +6,7 @@ import com.globaltrade.logistics.core.entity.order.OrderStatus;
 import com.globaltrade.logistics.core.entity.order.shipment.Shipment;
 import com.globaltrade.logistics.core.entity.order.shipment.ShipmentStatus;
 import com.globaltrade.logistics.core.entity.order.shipment.tracking.ShipmentTracking;
+import com.globaltrade.logistics.core.exception.CustomerServiceException;
 import com.globaltrade.logistics.core.service.CustomerDashboardService;
 import com.globaltrade.logistics.ejb.repository.*;
 import jakarta.annotation.security.RolesAllowed;
@@ -36,11 +37,11 @@ public class CustomerDashboardServiceBean implements CustomerDashboardService {
     @TransactionAttribute(TransactionAttributeType.SUPPORTS)
     public CustomerDashboardResponse getDashboard(UUID customerId) {
         if(customerId == null){
-            throw new IllegalArgumentException("customerId is not found");
+            throw new CustomerServiceException("customerId is not found");
         }
 
         customerRepository.findById(customerId)
-                .orElseThrow(() -> new IllegalArgumentException("customerId is not found"));
+                .orElseThrow(() -> new CustomerServiceException("customerId is not found"));
 
         return new CustomerDashboardResponse(
                 buildSummary(customerId),

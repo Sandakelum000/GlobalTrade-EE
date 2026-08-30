@@ -51,10 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return roleStr.toUpperCase() === 'ADMIN';
         });
 
+        const isManager = rolesList.some(r => {
+            const roleStr = typeof r === 'string' ? r : r.roleType || r.name || '';
+            return roleStr.toUpperCase() === 'OPERATIONS_MANAGER';
+        });
+
         if (isAdmin) {
             window.location.href = 'admin.html';
+        }else if(isManager){
+            window.location.href = 'manager.html';
         } else {
-            window.location.href = 'dashboard.html';
+            window.location.href = 'customer.html';
         }
     }
 
