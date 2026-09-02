@@ -13,8 +13,6 @@ import com.globaltrade.logistics.core.entity.employee.EmployeeStatus;
 import com.globaltrade.logistics.core.entity.security.Role;
 import com.globaltrade.logistics.core.entity.security.User;
 import com.globaltrade.logistics.core.exception.EmployeeServiceException;
-import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
-import com.globaltrade.logistics.core.exception.UsernameAlreadyExistsException;
 import com.globaltrade.logistics.core.service.AdminEmployeeService;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.ejb.repository.ContentRepository;

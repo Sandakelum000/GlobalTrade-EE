@@ -3,6 +3,7 @@ package com.globaltrade.logistics.web.resource;
 import com.globaltrade.logistics.core.dto.product.ProductRegistrationRequest;
 import com.globaltrade.logistics.core.dto.product.ProductRegistrationResponse;
 import com.globaltrade.logistics.core.service.ProductService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.EJB;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -16,6 +17,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/product")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed({"ADMIN"})
 public class ProductResource {
 
     @EJB

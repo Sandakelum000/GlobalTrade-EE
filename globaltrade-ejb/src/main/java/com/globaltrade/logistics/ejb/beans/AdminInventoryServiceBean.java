@@ -10,7 +10,6 @@ import com.globaltrade.logistics.core.exception.AdminInventoryServiceException;
 import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.AdminInventoryService;
 import com.globaltrade.logistics.ejb.repository.AdminInventoryRepository;
-import com.globaltrade.logistics.ejb.repository.InventoryRepository;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;

@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_BASE_URL = getContextPath();
 
-    // Token Refresh State Management
     let isRefreshing = false;
     let refreshSubscribers = [];
 
@@ -110,7 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (response.status === 403) {
-            showAlert("Access forbidden: You do not have permission to execute this request.", "error");
+            window.location.href = 'forbidden.html';
+            return response;
         }
 
         return response;
@@ -118,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.authenticatedFetch = authenticatedFetch;
 
-    // UI Elements
     const sidebarButtons = document.querySelectorAll('.sidebar-btn');
     const sectionPanes = document.querySelectorAll('.section-pane');
     const currentPageTitle = document.getElementById('currentPageTitle');
@@ -131,13 +130,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const signOutBtn = document.getElementById('signOutBtn');
     const makeOrderBtn = document.getElementById('makeOrderBtn');
 
-    // Loader & Alert
     const dashLoader = document.getElementById('dashLoader');
     const dashAlert = document.getElementById('dashAlert');
     const dashAlertIcon = document.getElementById('dashAlertIcon');
     const dashAlertMessage = document.getElementById('dashAlertMessage');
 
-    // Inventory & Cart Elements
     const marketplaceGrid = document.getElementById('marketplaceGrid');
     const marketplaceSearchInput = document.getElementById('marketplaceSearchInput');
     const refreshInventoryBtn = document.getElementById('refreshInventoryBtn');
@@ -148,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartGrandTotal = document.getElementById('cartGrandTotal');
     const placeOrderSubmitBtn = document.getElementById('placeOrderSubmitBtn');
 
-    // Modal Elements
     const productModal = document.getElementById('productModal');
     const closeProductModalBtn = document.getElementById('closeProductModalBtn');
     const modalProductName = document.getElementById('modalProductName');
@@ -162,16 +158,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalQtyErrorText = document.getElementById('modalQtyErrorText');
     const modalAddToCartBtn = document.getElementById('modalAddToCartBtn');
 
-    // State Variables
     let availableInventoryList = [];
     let activeCart = [];
     let selectedInventoryItem = null;
     let ordersChartInstance = null;
     let spendingChartInstance = null;
 
-    // ==========================================
-    // Status Badge & Color Utilities
-    // ==========================================
+
     function getStatusBadgeHtml(statusStr) {
         const rawStatus = (statusStr || '').toUpperCase();
         let displayLabel = rawStatus.charAt(0) + rawStatus.slice(1).toLowerCase().replace(/_/g, ' ');
@@ -201,7 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // PayHere Callbacks
     if (typeof payhere !== 'undefined') {
         payhere.onCompleted = function onCompleted(orderId) {
             showAlert("Payment processed successfully! Updating dashboard...", "info");
@@ -219,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Authentication Guard
     function checkAuthSession() {
         const token = localStorage.getItem('access_token');
         const username = localStorage.getItem('username');
@@ -241,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const authToken = checkAuthSession();
 
-    // Load Dashboard Core Data
     async function loadDashboardData() {
         if (!authToken) return;
 
@@ -271,7 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Inventory & Marketplace Catalog
     async function fetchInventory() {
         if (!authToken) return;
 
@@ -372,7 +361,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Product Selection Modal Controls
     function openProductModal(item) {
         selectedInventoryItem = item;
         if (modalProductName) modalProductName.textContent = item.productName;
@@ -398,7 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Strict Validation Rule Function
     function validateQuantityInput(qty, availableMax) {
         if (isNaN(qty) || qty === null || qty === undefined) {
             return { valid: false, message: 'Please specify a numeric quantity.' };
@@ -492,7 +479,6 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshInventoryBtn.addEventListener('click', fetchInventory);
     }
 
-    // Render Cart Summary
     function renderCartSummary() {
         if (!cartItemsContainer) return;
         cartItemsContainer.innerHTML = '';
@@ -585,7 +571,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // PayHere Checkout Initiation
     async function initiatePayHereCheckout(orderId) {
         if (!orderId) {
             showAlert("Invalid Order ID for payment.", "error");
@@ -642,7 +627,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Orders Table Rendering
     function renderRecentOrdersTable(orders = []) {
         const tbody = document.getElementById('recentOrdersTableBody');
         if (!tbody) return;
@@ -718,7 +702,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Navigation Switcher
     function switchSection(targetId) {
         sectionPanes.forEach(pane => pane.classList.add('hidden'));
 
@@ -781,7 +764,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Render Metrics & Colorful Summary Cards
     function renderSummaryMetrics(summary) {
         if (!summary) return;
         const totalOrd = document.getElementById('metricTotalOrders');
@@ -799,7 +781,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (totalSpent) totalSpent.textContent = `$${spent}`;
     }
 
-    // Render Styled Chart.js Charts
     function renderCharts(monthlyOrders = [], monthlySpending = []) {
         const ordersChartElem = document.getElementById('monthlyOrdersChart');
         if (ordersChartElem) {
@@ -869,7 +850,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Always-On Top Status Summary Cards for Orders Pane
     function renderOrderStatusCards(orderStatusList = []) {
         const container = document.getElementById('orderStatusCardsContainer');
         if (!container) return;
@@ -898,7 +878,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Always-On Top Status Summary Cards for Shipments Pane
     function renderShipmentStatusCards(shipmentStatusList = []) {
         const container = document.getElementById('shipmentStatusCardsContainer');
         if (!container) return;
@@ -928,7 +907,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Render Shipments Table
     function renderShipmentsTable(shipments = []) {
         const tbody = document.getElementById('shipmentsTableBody');
         if (!tbody) return;
@@ -962,7 +940,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Loader & Alert Helpers
     function showLoader(visible) {
         if (!dashLoader) return;
         if (visible) dashLoader.classList.remove('hidden');
@@ -986,7 +963,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dashAlert) dashAlert.classList.add('hidden');
     }
 
-    // Initialize Application
     loadDashboardData();
     switchSection('secDashboard');
 });

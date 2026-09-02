@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Access Forbidden | GlobalTrade Logistics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                        body: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(3deg); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-6 relative overflow-hidden font-sans antialiased select-none">
+
+<div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-rose-600/15 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="absolute bottom-10 right-10 w-80 h-80 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+<main class="w-full max-w-lg bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 sm:p-10 shadow-2xl shadow-black/80 text-center relative z-10 space-y-8 animate-float">
+
+    <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
+        <div class="absolute inset-0 bg-rose-500/20 rounded-3xl blur-xl animate-pulse"></div>
+        <div class="w-24 h-24 bg-gradient-to-br from-rose-500 to-red-700 text-white rounded-3xl flex items-center justify-center shadow-lg shadow-rose-500/30 border border-rose-400/30">
+            <i class="fa-solid fa-lock text-4xl"></i>
+        </div>
+    </div>
+
+    <div class="space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-full text-xs font-bold tracking-wider uppercase">
+            <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Error 403 Forbidden
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">Access Restricted</h1>
+
+        <p class="text-sm text-slate-400 font-body leading-relaxed max-w-sm mx-auto">
+            You do not have the necessary security credentials or active session permissions to access this portal page.
+        </p>
+    </div>
+
+    <div class="pt-2 space-y-3">
+        <button id="signInRedirectBtn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 px-6 rounded-2xl text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg shadow-indigo-600/25 active:scale-[0.98]">
+            <i class="fa-solid fa-right-to-bracket text-sm"></i>
+            <span>Sign In To Access Account</span>
+        </button>
+
+        <button id="goBackBtn" class="w-full bg-slate-800/60 hover:bg-slate-800 text-slate-300 font-semibold py-3 px-6 rounded-2xl text-xs transition-all border border-slate-700/50 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-arrow-left text-xs"></i>
+            <span>Return to Previous Page</span>
+        </button>
+    </div>
+
+    <div class="pt-4 border-t border-slate-800/60 text-[11px] text-slate-500 font-body flex items-center justify-center gap-2">
+        <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+        <span>GlobalTrade Logistics Identity & Access Firewall</span>
+    </div>
+
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const signInBtn = document.getElementById('signInRedirectBtn');
+        const goBackBtn = document.getElementById('goBackBtn');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('roles');
+
+        if (signInBtn) {
+            signInBtn.addEventListener('click', () => {
+                window.location.href = 'signin.html';
+            });
+        }
+
+        if (goBackBtn) {
+            goBackBtn.addEventListener('click', () => {
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'signin.html';
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

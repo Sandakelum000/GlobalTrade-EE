@@ -23,7 +23,6 @@ import java.util.UUID;
 @Path("/vendors")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed({"ADMIN"})
 public class VendorResource {
 
     @EJB
@@ -74,6 +73,7 @@ public class VendorResource {
     }
 
     @PUT
+    @RolesAllowed({"ADMIN"})
     @Path("/activate/{vendorId}")
     public Response activateVendor(@PathParam("vendorId") UUID vendorId) {
         AdminVendorDetailsResponse response = adminVendorService.activateVendor(vendorId);
@@ -82,6 +82,7 @@ public class VendorResource {
 
 
     @PUT
+    @RolesAllowed({"ADMIN"})
     @Path("/deactivate/{vendorId}")
     public Response deactivateVendor(@PathParam("vendorId") UUID vendorId) {
         AdminVendorDetailsResponse response = adminVendorService.deactivateVendor(vendorId);

@@ -16,7 +16,6 @@ import jakarta.ejb.TransactionAttributeType;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 @Stateless
 public class AdminDashboardServiceBean implements AdminDashboardService {

@@ -35,7 +35,6 @@ import java.util.*;
 @Stateless
 @Audited
 @Interceptors(AuditInterceptor.class)
-@RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
 public class ShipmentServiceBean implements ShipmentService {
     private static final String SEQUENCE_KEY = "SHIPMENT";
     private static final String PREFIX = "SHI";
@@ -137,17 +136,16 @@ public class ShipmentServiceBean implements ShipmentService {
                 .deliveredAt(null)
                 .build();
 
-        shipmentRepository.save(shipment);
 
         for (OrderItem orderItem : warehouseItems) {
             ShipmentItem shipmentItem = ShipmentItem.builder()
-                    .shipment(shipment)
                     .orderItem(orderItem)
                     .status(ShipmentItemStatus.PENDING)
                     .build();
 
-            shipmentItemRepository.save(shipmentItem);
+            shipment.addItem(shipmentItem);
         }
+        shipmentRepository.save(shipment);
 
         auditLogService.log(null,AuditAction.CREATE,ENTITY_NAME,shipment.getId().toString(),
                 "Shipment " + shipment.getShipmentNumber()
@@ -166,6 +164,7 @@ public class ShipmentServiceBean implements ShipmentService {
             entity = "Shipment"
     )
     @Transactional(Transactional.TxType.REQUIRED)
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     public ShipmentRegistrationResponse shipShipment(UUID shipmentId) {
         Shipment shipment = shipmentRepository.findById(shipmentId)
                 .orElseThrow(() -> new ShipmentShippingException("Shipment not found id: " + shipmentId));
@@ -228,6 +227,7 @@ public class ShipmentServiceBean implements ShipmentService {
             entity = "ShipmentTracking"
     )
     @Transactional(Transactional.TxType.REQUIRED)
+    @RolesAllowed({"ADMIN","OPERATIONS_MANAGER"})
     public ShipmentTrackingResponse updateShipmentTracking(UUID shipmentId, ShipmentTrackingRequest request) {
 
         if (request == null) {

@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_BASE_URL = getContextPath();
 
-    // --- AUTHENTICATED FETCH & TOKEN REFRESH ENGINE ---
     let isRefreshing = false;
     let refreshSubscribers = [];
 
@@ -110,7 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (response.status === 403) {
-            showAlert("Access forbidden: You do not have permission to execute this request.", "error");
+            window.location.href = 'forbidden.html';
+            return response;
         }
 
         return response;

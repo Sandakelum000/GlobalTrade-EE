@@ -11,7 +11,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.springframework.context.annotation.Role;
 import org.springframework.lang.NonNull;
 
 @Stateless

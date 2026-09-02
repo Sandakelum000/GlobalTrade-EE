@@ -25,7 +25,6 @@ import org.springframework.lang.NonNull;
 import java.util.UUID;
 
 @Stateless
-@RolesAllowed({"ADMIN","CUSTOMER"})
 public class CustomerServiceBean implements CustomerService {
 
     private static final String SEQUENCE_KEY = "CUSTOMER";
@@ -101,8 +100,10 @@ public class CustomerServiceBean implements CustomerService {
                 customer.isKycVerified()
         );
     }
+
     @Override
     @Transactional(Transactional.TxType.SUPPORTS)
+    @RolesAllowed({"ADMIN","CUSTOMER"})
     public UUID findCustomerIdByUsername(String username) {
 
         if (username == null || username.isBlank()) {

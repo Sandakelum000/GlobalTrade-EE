@@ -1,14 +1,11 @@
 package com.globaltrade.logistics.ejb.beans;
 
-import com.globaltrade.logistics.core.annotation.Audited;
-import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.customer.Customer;
 import com.globaltrade.logistics.core.entity.order.Order;
 import com.globaltrade.logistics.core.entity.order.OrderItem;
 import com.globaltrade.logistics.core.entity.order.OrderStatus;
 import com.globaltrade.logistics.core.entity.payment.PayHereDTO;
 import com.globaltrade.logistics.core.exception.CheckoutException;
-import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.CheckoutService;
 import com.globaltrade.logistics.core.service.ConfigService;
 import com.globaltrade.logistics.core.util.PayHereUtil;

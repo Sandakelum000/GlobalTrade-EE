@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Dynamic Context Path Resolver
     const getContextPath = () => {
         const path = window.location.pathname;
         const secondSlash = path.indexOf('/', 1);
@@ -8,18 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_BASE_URL = getContextPath();
 
-    // DOM Elements - Navigation & Session
     const navAuthContainer = document.getElementById('navAuthContainer');
     const heroRegisterBtn = document.getElementById('heroRegisterBtn');
     const registerNavBtn = document.getElementById('registerNavBtn');
 
-    // DOM Elements - Modal & Tabs
     const registerModal = document.getElementById('registerModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const tabCustomerBtn = document.getElementById('tabCustomerBtn');
     const tabVendorBtn = document.getElementById('tabVendorBtn');
 
-    // DOM Elements - Form & Inputs
     const registerForm = document.getElementById('registerForm');
     const customerTypeField = document.getElementById('customerTypeField');
     const countrySelect = document.getElementById('countrySelect');
@@ -36,21 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const validationErrorSummary = document.getElementById('validationErrorSummary');
     const validationErrorList = document.getElementById('validationErrorList');
 
-    // State Variable ('CUSTOMER' | 'VENDOR')
     let activeTab = 'CUSTOMER';
 
-    // ==========================================
-    // 1. Session & Navigation Setup
-    // ==========================================
     function checkActiveSession() {
         const accessToken = localStorage.getItem('access_token');
         const username = localStorage.getItem('username');
 
         if (accessToken && username) {
-            // Replace navigation items with direct Dashboard entry point
             navAuthContainer.innerHTML = `
-                <a href="dashboard.html" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-mono font-semibold px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-gauge-high text-slate-300"></i>
+                <a href="signin.html" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high"></i>
                     <span>Dashboard (${username})</span>
                 </a>
             `;
@@ -69,9 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ==========================================
-    // 2. Data Fetching (Countries & Companies)
-    // ==========================================
     async function loadPartnershipCountries() {
         const countriesLoading = document.getElementById('countriesLoading');
         const countriesContainer = document.getElementById('countriesContainer');
@@ -80,20 +68,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_BASE_URL}/data/countries`);
             if (!response.ok) throw new Error('Failed to load countries');
 
-            const countries = await response.json(); // List<CountryResponse>
+            const countries = await response.json();
 
-            // Render on landing page
             countriesContainer.innerHTML = '';
             countrySelect.innerHTML = '<option value="">-- Choose Country --</option>';
 
             countries.forEach(c => {
-                // Populate Landing Page Network Badges
                 const badge = document.createElement('span');
-                badge.className = 'px-3 py-1.5 bg-white border border-slate-200 text-slate-700 font-mono text-xs rounded-xl shadow-sm flex items-center gap-2';
-                badge.innerHTML = `<i class="fa-solid fa-location-dot text-slate-400"></i>${c.name}`;
+                badge.className = 'px-3.5 py-2 bg-white border border-slate-200/80 text-slate-700 font-bold text-xs rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2';
+                badge.innerHTML = `<i class="fa-solid fa-location-dot text-indigo-500"></i>${c.name}`;
                 countriesContainer.appendChild(badge);
 
-                // Populate Modal Select
                 const option = document.createElement('option');
                 option.value = c.id;
                 option.textContent = c.name;
@@ -123,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_BASE_URL}/data/${countryId}/companies`);
             if (!response.ok) throw new Error('Failed to load companies');
 
-            const companies = await response.json(); // List<CompanyResponse>
+            const companies = await response.json();
             companySelect.innerHTML = '<option value="">-- Select Company --</option>';
 
             if (companies.length === 0) {
@@ -145,9 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ==========================================
-    // 3. Modal & Tab Controller
-    // ==========================================
     function openModal() {
         clearErrors();
         registerModal.classList.remove('hidden');
@@ -162,13 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
         clearErrors();
 
         if (activeTab === 'CUSTOMER') {
-            tabCustomerBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg transition-all bg-white text-slate-900 shadow-sm';
-            tabVendorBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900';
+            tabCustomerBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-white text-slate-900 shadow-sm';
+            tabVendorBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900';
             customerTypeField.classList.remove('hidden');
             regBtnText.textContent = 'Complete Customer Registration';
         } else {
-            tabVendorBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg transition-all bg-white text-slate-900 shadow-sm';
-            tabCustomerBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900';
+            tabVendorBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-white text-slate-900 shadow-sm';
+            tabCustomerBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900';
             customerTypeField.classList.add('hidden');
             regBtnText.textContent = 'Complete Vendor Registration';
         }
@@ -179,16 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tabCustomerBtn.addEventListener('click', () => switchTab('CUSTOMER'));
     tabVendorBtn.addEventListener('click', () => switchTab('VENDOR'));
 
-    // ==========================================
-    // 4. Form Submission & Exception Handling
-    // ==========================================
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearErrors();
 
         const endpoint = activeTab === 'CUSTOMER' ? `${API_BASE_URL}/customer/register` : `${API_BASE_URL}/vendor/register`;
 
-        // Payload Construction matching DTO structures
         let payload = {};
 
         if (activeTab === 'CUSTOMER') {
@@ -204,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 companyId: companySelect.value || null
             };
         } else {
-            // Vendor Registration Request Mapping
             payload = {
                 contactFirstName: document.getElementById('firstName').value.trim(),
                 contactLastName: document.getElementById('lastName').value.trim(),
@@ -234,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = 'signin.html';
                 }, 1500);
             } else if (response.status === 400 && Array.isArray(data)) {
-                // Parse JAX-RS ConstraintViolationExceptionMapper list: ValidationErrorResponse
                 showValidationErrors(data);
             } else {
                 showModalAlert(data.error || 'Registration failed. Check inputs.', 'error');
@@ -248,9 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ==========================================
-    // 5. UI Helpers
-    // ==========================================
     function setLoading(isLoading) {
         regSubmitBtn.disabled = isLoading;
         if (isLoading) {
@@ -264,14 +237,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showModalAlert(message, type = 'error') {
         modalAlertMessage.textContent = message;
-        modalAlert.className = 'mb-4 p-4 rounded-xl text-xs font-mono border flex items-center gap-3';
+        modalAlert.className = 'mb-4 p-4 rounded-xl text-xs font-semibold border flex items-center gap-3 shadow-sm';
 
         if (type === 'error') {
-            modalAlert.classList.add('bg-red-50', 'border-red-200', 'text-red-700');
-            modalAlertIcon.className = 'fa-solid fa-triangle-exclamation text-red-500';
+            modalAlert.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+            modalAlertIcon.className = 'fa-solid fa-triangle-exclamation text-rose-600';
         } else if (type === 'success') {
-            modalAlert.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-700');
-            modalAlertIcon.className = 'fa-solid fa-circle-check text-emerald-500';
+            modalAlert.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+            modalAlertIcon.className = 'fa-solid fa-circle-check text-emerald-600';
         }
 
         modalAlert.classList.remove('hidden');
@@ -293,7 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
         validationErrorList.innerHTML = '';
     }
 
-    // Initialize Page
     checkActiveSession();
     loadPartnershipCountries();
 });

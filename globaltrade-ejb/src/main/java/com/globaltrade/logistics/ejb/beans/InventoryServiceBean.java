@@ -1,8 +1,6 @@
 package com.globaltrade.logistics.ejb.beans;
 
 import com.globaltrade.logistics.core.dto.inventory.InventoryMonitorRecord;
-import com.globaltrade.logistics.core.entity.warehouse.Inventory;
-import com.globaltrade.logistics.core.entity.warehouse.InventoryStatus;
 import com.globaltrade.logistics.core.service.InventoryService;
 import com.globaltrade.logistics.ejb.repository.InventoryRepository;
 import jakarta.ejb.Stateless;
@@ -10,7 +8,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Stateless
 public class InventoryServiceBean implements InventoryService {

@@ -33,9 +33,17 @@ public class OrderExpirationTimer {
 
     @Timeout
     public void expireUnpaidOrders() {
+        long startTime = System.nanoTime();
         LOGGER.info("OrderExpirationTimer has been started...");
         try{
             adminOrderService.cancelExpiredUnpaidOrders();
+
+            long executionTime = System.nanoTime() - startTime;
+            LOGGER.info(
+                    "OrderExpirationTimer completed in "
+                            + (executionTime / 1_000_000)
+                            + " ms"
+            );
         } catch (Exception e) {
             LOGGER.warning("OrderExpirationTimer failed to start..."+e.getMessage());
         }

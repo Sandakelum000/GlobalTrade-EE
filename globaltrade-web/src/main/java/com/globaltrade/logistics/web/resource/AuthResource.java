@@ -59,7 +59,7 @@ public class AuthResource {
             String accessToken = jwtService.generateAccessToken(username, roles);
             String refreshToken = refreshTokenService.createByUsername(username);
 
-            auditLogService.logLogin(username);
+            //auditLogService.logLogin(username);
 
             return Response.ok(
                     Map.of("access", accessToken,

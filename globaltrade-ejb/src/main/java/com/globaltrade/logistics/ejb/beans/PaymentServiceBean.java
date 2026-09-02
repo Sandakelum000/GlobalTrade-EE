@@ -1,7 +1,6 @@
 package com.globaltrade.logistics.ejb.beans;
 
 import com.globaltrade.logistics.core.annotation.Audited;
-import com.globaltrade.logistics.core.dto.payment.PaymentRegistrationRequest;
 import com.globaltrade.logistics.core.dto.payment.PaymentRegistrationResponse;
 import com.globaltrade.logistics.core.entity.audit.AuditAction;
 import com.globaltrade.logistics.core.entity.order.Order;
@@ -10,15 +9,12 @@ import com.globaltrade.logistics.core.entity.payment.Payment;
 import com.globaltrade.logistics.core.entity.payment.PaymentMethod;
 import com.globaltrade.logistics.core.entity.payment.PaymentStatus;
 import com.globaltrade.logistics.core.exception.PaymentException;
-import com.globaltrade.logistics.core.exception.ResourceNotFoundException;
 import com.globaltrade.logistics.core.service.NumberSequenceService;
 import com.globaltrade.logistics.core.service.PaymentService;
-import com.globaltrade.logistics.core.service.ShipmentService;
 import com.globaltrade.logistics.core.util.PayHereUtil;
 import com.globaltrade.logistics.ejb.messaging.ShipmentCreationProducer;
 import com.globaltrade.logistics.ejb.repository.OrderRepository;
 import com.globaltrade.logistics.ejb.repository.PaymentRepository;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;

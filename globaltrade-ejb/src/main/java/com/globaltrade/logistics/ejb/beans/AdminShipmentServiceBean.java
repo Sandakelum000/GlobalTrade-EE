@@ -38,7 +38,7 @@ public class AdminShipmentServiceBean implements AdminShipmentService {
     private ShipmentTrackingRepository shipmentTrackingRepository;
 
     @Override
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(Transactional.TxType.REQUIRED)
     public PageResponse<AdminShipmentListResponse> getShipments(String search, ShipmentStatus status, UUID warehouseId, String sortBy, String direction, int page, int size) {
         if(page < 0){
             throw new AdminShipmentServiceException("page cannot be negative");
@@ -70,8 +70,9 @@ public class AdminShipmentServiceBean implements AdminShipmentService {
     }
 
     @Override
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(Transactional.TxType.REQUIRED)
     public AdminShipmentDetailsResponse getShipmentDetails(UUID shipmentId) {
+        System.out.println("Get Shipment details for shipment id " + shipmentId);
         if (shipmentId == null) {
             throw new AdminShipmentServiceException("Shipment ID cannot be null");
         }

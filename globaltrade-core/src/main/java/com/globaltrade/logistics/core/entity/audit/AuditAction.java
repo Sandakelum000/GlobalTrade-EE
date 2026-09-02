@@ -13,6 +13,7 @@ package com.globaltrade.logistics.core.entity.audit;public enum AuditAction {
     SHIPMENT_OVERDUE,
     LOW_STOCK,
     PAYMENT,
+    CUSTOM_DEADLINE
 }
 
 
