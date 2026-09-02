@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return response;
     }
 
-    // Helper to display ValidationErrorResponse fields
     function showValidationErrorAlert(errorData, alertElem, msgElem, detailElem, fieldElem = null, statusElem = null) {
         if (!alertElem) return;
 
@@ -172,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alertElem.classList.remove('hidden');
     }
 
-    // Header & User UI Elements
     const usernameDisplay = document.getElementById('usernameDisplay');
     const userAvatar = document.getElementById('userAvatar');
     const roleBadge = document.getElementById('roleBadge');
@@ -182,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashAlertIcon = document.getElementById('dashAlertIcon');
     const dashAlertMessage = document.getElementById('dashAlertMessage');
 
-    // Modals
     const shipmentDetailsModal = document.getElementById('shipmentDetailsModal');
     const closeShipmentModalBtn = document.getElementById('closeShipmentModalBtn');
     const modalShipmentCloseFooterBtn = document.getElementById('modalShipmentCloseFooterBtn');
@@ -217,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let shipmentToShipId = null;
     let shipmentToUpdateTrackingId = null;
 
-    // Status Badging
     function getStatusBadgeHtml(statusStr) {
         const rawStatus = (statusStr || '').toUpperCase();
         let displayLabel = rawStatus.charAt(0) + rawStatus.slice(1).toLowerCase().replace(/_/g, ' ');
@@ -269,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // Session Guard
     function checkManagerSession() {
         const token = localStorage.getItem('access_token');
         const username = localStorage.getItem('username');
@@ -290,7 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!checkManagerSession()) return;
 
-    // --- SHIPMENT MODAL CONTROLLERS ---
     function openShipmentModal() {
         if (shipmentDetailsModal) shipmentDetailsModal.classList.remove('hidden');
     }
@@ -476,7 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- UPDATE TRACKING MODAL ---
     function openUpdateTrackingModal(shipment) {
         shipmentToUpdateTrackingId = shipment.shipmentId || shipment.id;
         if (!shipmentToUpdateTrackingId) return;
@@ -572,7 +565,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- SHIPMENTS QUERY & DATA FETCH ENGINE ---
     let shipmentQueryState = {
         search: '',
         status: '',
@@ -661,7 +653,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let actionButtonsHtml = '';
 
-            // Managers can log updates prior to dispatch
             if (isPendingOrProcessing) {
                 actionButtonsHtml = `
                     <button class="btn-update-tracking p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-900 transition-colors" title="Update Pre-Dispatch Checkpoint">
@@ -840,7 +831,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Helper Alerts
     function showAlert(message, type = 'error') {
         if (!dashAlert || !dashAlertMessage || !dashAlertIcon) return;
         dashAlertMessage.textContent = message;
@@ -857,7 +847,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initialization
     initShipmentsTableEvents();
     loadWarehouseDropdownOptions();
     fetchManagerShipments();

@@ -197,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashAlertIcon = document.getElementById('dashAlertIcon');
     const dashAlertMessage = document.getElementById('dashAlertMessage');
 
-    // Modals
     const orderDetailsModal = document.getElementById('orderDetailsModal');
     const closeOrderModalBtn = document.getElementById('closeOrderModalBtn');
     const modalOrderCloseFooterBtn = document.getElementById('modalOrderCloseFooterBtn');
@@ -260,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerEmployeeAlertDetail = document.getElementById('registerEmployeeAlertDetail');
     const registerEmployeeAlertStatus = document.getElementById('registerEmployeeAlertStatus');
 
-    // Vendor Status Activation/Deactivation Modal Elements
     const vendorStatusModal = document.getElementById('vendorStatusModal');
     const closeVendorStatusModalBtn = document.getElementById('closeVendorStatusModalBtn');
     const vendorStatusModalDismissBtn = document.getElementById('vendorStatusModalDismissBtn');
@@ -274,7 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const vendorStatusModalAlertDetail = document.getElementById('vendorStatusModalAlertDetail');
     const vendorStatusModalAlertStatus = document.getElementById('vendorStatusModalAlertStatus');
 
-    // Cancel Order Modal Elements
     const cancelOrderModal = document.getElementById('cancelOrderModal');
     const closeCancelModalBtn = document.getElementById('closeCancelModalBtn');
     const cancelModalDismissBtn = document.getElementById('cancelModalDismissBtn');

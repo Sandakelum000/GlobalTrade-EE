@@ -1,9 +1,7 @@
-/* Custom Clean White/Gray Theme Foundations */
 body {
     background-color: #f9fafb;
 }
 
-/* Animations */
 @keyframes cardEntrance {
     0% {
         opacity: 0;
